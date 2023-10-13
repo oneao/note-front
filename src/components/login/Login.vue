@@ -1,7 +1,7 @@
 <script setup>
 import {EmailOutlined, LockOutlined} from "@vicons/material"; //图标
-import {ref} from 'vue';
-import {useMessage,useLoadingBar} from "naive-ui";
+import {ref,computed} from 'vue';
+import {useMessage, useLoadingBar} from "naive-ui";
 
 const message = useMessage();
 const loadingBar = useLoadingBar();
@@ -10,6 +10,16 @@ const loginFormData = ref({
   email: '',
   password: '',
   checked: false
+})
+//邮箱提示计算属性
+const emailOptions = computed(() => {
+  return ["@gmail.com", "@163.com", "@qq.com"].map((suffix) => {
+    const prefix = loginFormData.value.email.split("@")[0];
+    return {
+      label: prefix + suffix,
+      value: prefix + suffix
+    };
+  });
 })
 //登录规则
 const loginFormRules = {
@@ -48,12 +58,14 @@ const loginFormRef = ref(null)
 import UserApi from '@/api/user'
 //用户共享资源
 import {useUserStore} from '@/stores/userStore'
+
 const userStore = useUserStore();
 const {setUserInfo} = userStore;
 //禁用按钮
 const loginBtnDisabled = ref(false);
 //引用登录模态框显示与否
 import {handOffModalStore} from '@/stores/loginModalStore'
+
 const modalStore = handOffModalStore();
 const {changeModalStatus} = modalStore;
 const handleValidateClick = (e) => {
@@ -67,15 +79,15 @@ const handleValidateClick = (e) => {
         password: loginFormData.value.password
       }
       UserApi.userLogin(loginForm).then(res => {
-        if(res.data.code === 60000){
+        if (res.data.code === 60000) {
           const user = res.data.data.user;
           //登录成功
           loadingBar.finish();//加载条结束
           message.success(res.data.message);
           changeModalStatus(false); //关闭登录模态框
-          localStorage.setItem("token",res.data.data.token) //存储token
-          setUserInfo(user.id,user.email,user.nickName,user.avatar,user.level,user.createTime);
-        }else{
+          localStorage.setItem("token", res.data.data.token) //存储token
+          setUserInfo(user.id, user.email, user.nickName, user.avatar, user.level, user.createTime);
+        } else {
           //登录失败
           loadingBar.error(); //加载条异常结束
           message.error(res.data.message);
@@ -83,7 +95,7 @@ const handleValidateClick = (e) => {
         //2.5s后解除登录按钮
         setTimeout(() => {
           loginBtnDisabled.value = false;
-        },1500)
+        }, 1500)
       }).catch(err => {
         console.log(err)
         loadingBar.error(); //加载条异常结束
@@ -91,7 +103,7 @@ const handleValidateClick = (e) => {
         //2.5s后解除登录按钮
         setTimeout(() => {
           loginBtnDisabled.value = false;
-        },2500)
+        }, 2500)
       })
     }
   });
@@ -109,12 +121,22 @@ const emits = defineEmits(['changeModal'])
     </n-space>
     <n-form ref="loginFormRef" :model="loginFormData" :rules="loginFormRules">
       <n-form-item label="邮箱账号" path="email" first style="margin-top: 8px">
-        <n-input placeholder="输入邮箱号" v-model:value="loginFormData.email">
+        <!--<n-input placeholder="输入邮箱号" v-model:value="loginFormData.email">-->
+        <!--  &lt;!&ndash;     prefix插槽       &ndash;&gt;-->
+        <!--  <template #prefix>-->
+        <!--    <n-icon :component="EmailOutlined"></n-icon>-->
+        <!--  </template>-->
+        <!--</n-input>-->
+        <n-auto-complete v-model:value="loginFormData.email"
+                         :input-props="{autocomplete: 'disabled'}"
+                         placeholder="输入邮箱号"
+                         :options="emailOptions"
+                         clearable>
           <!--     prefix插槽       -->
           <template #prefix>
             <n-icon :component="EmailOutlined"></n-icon>
           </template>
-        </n-input>
+        </n-auto-complete>
       </n-form-item>
       <n-form-item path="password" label="密码">
         <n-input type="password" v-model:value="loginFormData.password" placeholder="输入密码"

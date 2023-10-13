@@ -30,11 +30,11 @@ const smallNoteList = ref([]);
 const getSmallNoteList = () =>{
   //获取当前登录用户的小记信息
   SmallNoteApi.getSmallNote(userId.value).then(res => {
-    loadingBar.start;
+    loadingBar.start();
     if(res && res.data.code === 200){
       //查找成功
       smallNoteList.value = res.data.data;
-      loadingBar.finish;
+      loadingBar.finish();
     }
   }).catch(err => {
     loadingBar.error;

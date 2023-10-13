@@ -55,7 +55,7 @@ import {useMessage} from 'naive-ui'
 
 const message = useMessage()
 //控制弹出消息框的显示
-const showPopover = ref(true);
+const showPopover = ref(false);
 //操作菜单
 const updateMenuStatus = (key, item) => {
   if (key === 'sign-out') {
@@ -63,8 +63,8 @@ const updateMenuStatus = (key, item) => {
       if (res.data.code === 60003) {
         //注销成功
         message.success(res.data.message)
+        showPopover.value = true;
         resetUserInfo();
-        showPopover.value = false;
         //删除本地存储信息
         window.localStorage.removeItem('token')
       } else {
@@ -84,7 +84,7 @@ const updateMenuStatus = (key, item) => {
     <n-text style="font-size: 20px">Note</n-text>
     <n-space style="text-align: center">
       <!--头像-->
-      <n-popover trigger="click" width="260" content-style="padding: 10px">
+      <n-popover :disabled="showPopover" trigger="click" width="260" content-style="padding: 10px">
         <!--  -->
         <!--头像菜单触发器-->
         <template #trigger>
