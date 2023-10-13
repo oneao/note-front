@@ -3,6 +3,12 @@ import {computed,onMounted} from "vue";
 import {storeToRefs} from "pinia";
 //引入图片
 import {DeleteForeverSharp,ArrowCircleUpOutlined,ArrowCircleDownOutlined,EditFilled} from '@vicons/material'
+//引入消息组件
+import { useMessage } from 'naive-ui'
+const message = useMessage()
+//引入加载条组件
+import { useLoadingBar } from 'naive-ui'
+const loadingBar = useLoadingBar()
 //引入主题store
 import {useThemeStore} from '@/stores/themeStore'
 const themeStore = useThemeStore();
@@ -20,12 +26,23 @@ const {id:userId} = storeToRefs(userStore);
 import SmallNoteApi from '@/api/smallNote'
 //小记列表对象
 const smallNoteList = ref([]);
-//获取当前登录用户的小记信息
-SmallNoteApi.getSmallNote(userId.value).then(res => {
-  if(res && res.data.code === 200){
-    //查找成功
-    smallNoteList.value = res.data.data;
-  }
+//获取小记列表
+const getSmallNoteList = () =>{
+  //获取当前登录用户的小记信息
+  SmallNoteApi.getSmallNote(userId.value).then(res => {
+    loadingBar.start;
+    if(res && res.data.code === 200){
+      //查找成功
+      smallNoteList.value = res.data.data;
+      loadingBar.finish;
+    }
+  }).catch(err => {
+    loadingBar.error;
+  })
+}
+//进入页面加载
+onMounted(() => {
+  getSmallNoteList();
 })
 //小记是否置顶按钮显示
 const isTopIconText = top => {
@@ -40,6 +57,30 @@ const isTopIconText = top => {
       text: '置顶'
     }
   }
+}
+//小记置顶按钮的禁用与否
+const smallNoteTopButton = ref(false);
+//改变指定小记的置顶状态
+const changeTopStatus = (smallNoteId,isTopValue) => {
+  //禁用小记置顶按钮
+  smallNoteTopButton.value = true;
+  const changeTop = {
+    userId:userId.value,
+    smallNoteId:smallNoteId,
+    smallNoteTopStatus:isTopValue,
+  }
+  SmallNoteApi.changeSmallNoteTopStatus(changeTop).then(res => {
+    if(res.data.code === 60004){
+      message.success(res.data.message)
+      //取消小记置顶按钮
+      smallNoteTopButton.value = false;
+      getSmallNoteList();
+    }else{
+      message.error('服务端错误')
+    }
+  }).catch(err => {
+    console.log(err)
+  })
 }
 </script>
 
@@ -80,8 +121,8 @@ const isTopIconText = top => {
             <!--置顶按钮-->
             <n-popover>
               <template #trigger>
-                <n-button text style="margin-left: 10px">
-                  <n-icon :size="18"  :component="isTopIconText(smallNote.isTop).icon" />
+                <n-button :disabled="smallNoteTopButton" text style="margin-left: 10px">
+                  <n-icon :size="18" @click="changeTopStatus(smallNote.id,smallNote.isTop)" :component="isTopIconText(smallNote.isTop).icon" />
                 </n-button>
               </template>
               {{isTopIconText(smallNote.isTop).text}}
@@ -95,7 +136,6 @@ const isTopIconText = top => {
               </template>
               编辑
             </n-popover>
-
           </template>
           <template #default>
             <n-space>

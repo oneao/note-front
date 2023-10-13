@@ -68,7 +68,6 @@ const handleValidateClick = (e) => {
       }
       UserApi.userLogin(loginForm).then(res => {
         if(res.data.code === 60000){
-          console.log(res.data.data)
           const user = res.data.data.user;
           //登录成功
           loadingBar.finish();//加载条结束

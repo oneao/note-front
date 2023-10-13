@@ -1,6 +1,7 @@
 import axios from "axios";
 import {handOffModalStore} from '@/stores/loginModalStore';
 import {createDiscreteApi} from 'naive-ui'
+import {useUserStore} from '@/stores/userStore'
 //axios配置
 axios.defaults.baseURL = '/note'
 axios.defaults.timeout = 10000;
@@ -15,7 +16,6 @@ axios.interceptors.request.use(function (config) {
     }else{
         let userInfo = window.localStorage.getItem("user")
         let token = window.localStorage.getItem("token")
-        console.log(token)
         if (token === null || token === ''){
             const { message, notification, dialog, loadingBar } = createDiscreteApi(
                 ['message']
@@ -23,6 +23,10 @@ axios.interceptors.request.use(function (config) {
             message.error('尚未登录，请先登录')
             const {changeModalStatus} = handOffModalStore();
             changeModalStatus(true)
+            if(userInfo){
+                const {resetUserInfo} = useUserStore();
+                resetUserInfo();
+            }
             throw '登录'
         }else if (userInfo){
             //在请求头中添加信息
@@ -38,7 +42,6 @@ axios.interceptors.request.use(function (config) {
 })
 
 axios.interceptors.response.use(function (resp) {
-    console.log(resp)
     //对指定的应答结果进行处理
     if(resp && resp.data.code === 50000){
         //此时token无效，需要显示登录

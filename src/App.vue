@@ -38,7 +38,7 @@ onMounted(() => {
               海淀桥
             </n-layout-sider>
             <!--主页面-->
-            <router-view />
+            <router-view/>
           </n-layout>
         </n-layout>
         <!-- 登录模态框 -->

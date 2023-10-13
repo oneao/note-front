@@ -164,7 +164,6 @@ const handleValidateClick = (e) => {
         code:registerFormData.value.code
       }
       UserApi.userRegister(registerForm).then(res => {
-        console.log(res);
         if(res.data.code === 60002){
           message.success(res.data.message)
           //跳转到登录页面
