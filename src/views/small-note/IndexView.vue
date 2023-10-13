@@ -1,57 +1,86 @@
 <script setup>
-import {computed,onMounted} from "vue";
+import {computed, onMounted} from "vue";
 import {storeToRefs} from "pinia";
 //引入图片
-import {DeleteForeverSharp,ArrowCircleUpOutlined,ArrowCircleDownOutlined,EditFilled} from '@vicons/material'
+import {
+  DeleteForeverSharp,
+  ArrowCircleUpOutlined,
+  ArrowCircleDownOutlined,
+  EditFilled,
+  SubtitlesOffOutlined
+} from '@vicons/material'
 //引入消息组件
-import { useMessage } from 'naive-ui'
+import {useMessage} from 'naive-ui'
+
 const message = useMessage()
 //引入加载条组件
-import { useLoadingBar } from 'naive-ui'
+import {useLoadingBar} from 'naive-ui'
+
 const loadingBar = useLoadingBar()
 //引入主题store
 import {useThemeStore} from '@/stores/themeStore'
+
 const themeStore = useThemeStore();
 const {isDarkTheme} = storeToRefs(themeStore);
 //小记图片的背景颜色
 const thingFinishShadowColor = computed(() => {
   return isDarkTheme.value ? 'border-radius: 10px;border-color: lightblue;box-shadow: 0 2px 4px rgba(0,255,255, 0.5)'
-      : 'border-radius: 10px;box-shadow: 0 2px 4px rgba(0,0,0, 0.1);background-color:#E6F6FF'
+      : 'border-radius: 10px;border-color: lightblue;border:1px solid lightcoral;box-shadow: 0 2px 4px rgba(0,255,255, 0.5);'
 })
 //引入用户信息store
 import {useUserStore} from "@/stores/userStore";
+
 const userStore = useUserStore();
-const {id:userId} = storeToRefs(userStore);
+const {id: userId} = storeToRefs(userStore);
 //引入小记Api
 import SmallNoteApi from '@/api/smallNote'
+//进入页面加载
+onMounted(() => {
+  getSmallNoteList(true, queryObj);
+})
 //小记列表对象
 const smallNoteList = ref([]);
+//当前页
+const queryObj = ref({
+  userId: userId.value,
+  page: 1,//当前页
+  pageSize: 12//显示记录数
+})
+const pageChange = (nowPage) => {
+  queryObj.value.page = nowPage;
+  getSmallNoteList(true, queryObj);
+}
+const pageTotal = ref();
 //获取小记列表
-const getSmallNoteList = () =>{
+const getSmallNoteList = (isLoading, pageObj) => {
+  pageObj = {
+    userId: queryObj.value.userId,
+    page: queryObj.value.page,
+    pageSize: queryObj.value.pageSize
+  }
   //获取当前登录用户的小记信息
-  SmallNoteApi.getSmallNote(userId.value).then(res => {
+  SmallNoteApi.getSmallNote(pageObj).then(res => {
     loadingBar.start();
-    if(res && res.data.code === 200){
+    if (res && res.data.code === 200) {
       //查找成功
-      smallNoteList.value = res.data.data;
+      smallNoteList.value = res.data.data.record;
+      pageTotal.value = res.data.data.total;
       loadingBar.finish();
+      if (isLoading) loading.value = false;
     }
   }).catch(err => {
     loadingBar.error;
   })
 }
-//进入页面加载
-onMounted(() => {
-  getSmallNoteList();
-})
+
 //小记是否置顶按钮显示
 const isTopIconText = top => {
-  if(top){
+  if (top) {
     return {
       icon: ArrowCircleDownOutlined,
       text: '取消置顶'
     }
-  }else{
+  } else {
     return {
       icon: ArrowCircleUpOutlined,
       text: '置顶'
@@ -61,102 +90,207 @@ const isTopIconText = top => {
 //小记置顶按钮的禁用与否
 const smallNoteTopButton = ref(false);
 //改变指定小记的置顶状态
-const changeTopStatus = (smallNoteId,isTopValue) => {
+const changeTopStatus = (smallNoteId, isTopValue) => {
   //禁用小记置顶按钮
   smallNoteTopButton.value = true;
   const changeTop = {
-    userId:userId.value,
-    smallNoteId:smallNoteId,
-    smallNoteTopStatus:isTopValue,
+    userId: userId.value,
+    smallNoteId: smallNoteId,
+    smallNoteTopStatus: isTopValue,
   }
   SmallNoteApi.changeSmallNoteTopStatus(changeTop).then(res => {
-    if(res.data.code === 60004){
+    if (res.data.code === 60004) {
       message.success(res.data.message)
       //取消小记置顶按钮
       smallNoteTopButton.value = false;
-      getSmallNoteList();
-    }else{
+      getSmallNoteList(false);
+    } else {
       message.error('服务端错误')
     }
   }).catch(err => {
     console.log(err)
   })
 }
+//定义骨架屏的显示请求
+const loading = ref(true)
+//显示动画
+import gsap from "gsap";
+
+const beforeEnter = (el) => {
+  gsap.set(el, {
+    y: 30,
+    opacity: 0
+  })
+}
+const enterEvent = (el, done) => {
+  gsap.to(el, {
+    y: 0,
+    opacity: 1,
+    duration: 0.5,
+    delay:el.dataset.index * 0.12,
+    onComplete: done
+  })
+}
+//计算css样式
+const changePageCss = computed(() => {
+  if(smallNoteList.value.length <= 3){
+    return 'top:-10%;left:380px'
+  }else if(smallNoteList.value.length > 3 && smallNoteList.value.length <= 6){
+    return 'top:30%;left:380px'
+  }else{
+    return 'top:53%;left:380px'
+  }
+})
+const cardBelowCss = computed(() => {
+  if(smallNoteList.value.length <= 3){
+    return 'height:380px;'
+  }else if(smallNoteList.value.length > 3 && smallNoteList.value.length <= 6){
+    return 'height:600px;'
+  }else{
+    return 'height:880px;'
+  }
+})
 </script>
 
 <template>
-  <n-layout embedded content-style="padding:24px">
+  <n-layout embedded content-style="padding:24px" >
     <!--小记页面头部-->
-    <n-card size="small" style="border-radius: 10px;box-shadow: 0 2px 4px rgba(0,255,0,0.2);" >
+    <n-card size="small" style="border-radius: 10px;border: 1px solid red;box-shadow: 0 2px 4px skyblue;">
       <!--标题-->
       <template #header>
-        <h3>小记列表</h3>
+        <h3 style="margin-left: 700px">小记列表</h3>
       </template>
-      <!--新增按钮-->
-      <template #header-extra>
-        <n-button>新增小记</n-button>
-      </template>
+      <!--&lt;!&ndash;新增按钮&ndash;&gt;-->
+      <!--<template #header-extra>-->
+      <!--  <n-button style="margin-right: 500px">新增小记</n-button>-->
+      <!--</template>-->
     </n-card>
-    <n-card size="small" :bordered="false" style="margin-top: 20px">
-      <n-space>
-        <n-card v-for="smallNote in smallNoteList "
-                key="smallNote.id"
-                :class="{'thing-card-finished' : smallNote.isFinished}"
-                :segmented="{'content':'soft'}"
+    <!--小记页面底部-->
+    <n-card size="small" :bordered="false"
+            style="margin-top: 20px;border-radius: 10px;border: 1px solid lightcoral;box-shadow: 0 2px 4px skyblue;"
+            :style="cardBelowCss"
+            >
+      <!--骨架屏-->
+      <n-space v-if="loading">
+        <n-card :segmented="{'content':'soft'}"
                 size="small"
-                embedded
-                :title="smallNote.title"
                 :style="thingFinishShadowColor"
-                style="min-width: 220px;">
+                style="width: 330px;height: 130px;min-width: 230px;max-width:max-content"
+                embedded
+                v-for="n in 12">
+          <template #header>
+            <n-skeleton :width="180" height="20px"/>
+          </template>
           <template #header-extra>
-            <!--删除按钮-->
-            <n-popover>
-              <template #trigger>
-                <n-button text style="margin-left: 10px">
-                  <n-icon :size="18" :component="DeleteForeverSharp" />
-                </n-button>
-              </template>
-              删除
-            </n-popover>
-            <!--置顶按钮-->
-            <n-popover>
-              <template #trigger>
-                <n-button :disabled="smallNoteTopButton" text style="margin-left: 10px">
-                  <n-icon :size="18" @click="changeTopStatus(smallNote.id,smallNote.isTop)" :component="isTopIconText(smallNote.isTop).icon" />
-                </n-button>
-              </template>
-              {{isTopIconText(smallNote.isTop).text}}
-            </n-popover>
-            <!--编辑按钮-->
-            <n-popover>
-              <template #trigger>
-                <n-button text style="margin-left: 10px">
-                  <n-icon :size="18"  :component="EditFilled" />
-                </n-button>
-              </template>
-              编辑
-            </n-popover>
+            <n-skeleton :width="20" :height="20" style="margin-left: 6px" circle :repeat="3"></n-skeleton>
           </template>
           <template #default>
             <n-space>
-              <n-tag v-for="tag in smallNote.tags.split(',')" size="small" :bordered="false">{{ tag }}</n-tag>
+              <n-skeleton :width="30" :height="15"></n-skeleton>
+              <n-skeleton :width="30" :height="15"></n-skeleton>
+              <n-skeleton :width="30" :height="15"></n-skeleton>
             </n-space>
           </template>
           <template #footer>
-            <n-space align="center">
-              <n-tag v-if="smallNote.isTop" size="small" :bordered="false" type="success">置顶</n-tag>
-              <n-divider style="background-color: lightblue" v-if="smallNote.isTop"  vertical/>
-              <n-text depth="3">{{smallNote.createTime}}</n-text>
-            </n-space>
+            <n-skeleton text :width="160"/>
           </template>
         </n-card>
       </n-space>
+      <!--显示数据内容-->
+      <n-space :wrap-item="false">
+        <TransitionGroup @before-enter="beforeEnter" @enter="enterEvent">
+          <template v-if="!loading && smallNoteList.length > 0">
+            <n-card class="small-note-cards"
+                    v-for="(smallNote,index) in smallNoteList"
+                    key="smallNote.id"
+                    :data-index="index"
+                    :class="{'thing-card-finished' : smallNote.isFinished}"
+                    :segmented="{'content':'soft'}"
+                    size="small"
+                    embedded
+                    :title="smallNote.title"
+                    :style="thingFinishShadowColor"
+                    style="min-width:220px;max-width:305px;height: 220px;margin-top: 15px;margin-left: 25px;overflow:auto;">
+              <template #header-extra>
+                <!--删除按钮-->
+                <n-popover>
+                  <template #trigger>
+                    <n-button text style="margin-left: 10px">
+                      <n-icon :size="18" :component="DeleteForeverSharp"/>
+                    </n-button>
+                  </template>
+                  删除
+                </n-popover>
+                <!--置顶按钮-->
+                <n-popover>
+                  <template #trigger>
+                    <n-button :disabled="smallNoteTopButton" text style="margin-left: 10px">
+                      <n-icon :size="18" @click="changeTopStatus(smallNote.id,smallNote.isTop)"
+                              :component="isTopIconText(smallNote.isTop).icon"/>
+                    </n-button>
+                  </template>
+                  {{ isTopIconText(smallNote.isTop).text }}
+                </n-popover>
+                <!--编辑按钮-->
+                <n-popover>
+                  <template #trigger>
+                    <n-button text style="margin-left: 10px">
+                      <n-icon :size="18" :component="EditFilled"/>
+                    </n-button>
+                  </template>
+                  编辑
+                </n-popover>
+              </template>
+              <template #default>
+                <n-space>
+                  <n-tag v-if="smallNote.isTop" size="small" :bordered="false" type="success">置顶</n-tag>
+                  <n-tag v-for="tag in smallNote.tags.split(',')" size="small" :bordered="false">{{ tag }}</n-tag>
+                </n-space>
+              </template>
+              <template #footer>
+                <n-space align="center">
+                  <!--<n-divider style="background-color: lightblue;margin-left: 2px;margin-right: 2px" v-if="smallNote.isTop" vertical/>-->
+                  <n-text depth="3">创建时间 ：{{ smallNote.createTime }}</n-text>
+                  <n-text depth="3">完成时间 ：尚未完成哦!</n-text>
+                  <br>
+                  <n-text depth="3">剩余时间 ：200s</n-text>
+                </n-space>
+              </template>
+            </n-card>
+            <n-card :bordered="false"
+                    style="margin-top: 330px;margin-left: 150px;min-width:220px;max-width:max-content;position: absolute;"
+                    :style="changePageCss"
+            >
+              <n-pagination
+                  :display-order="['quick-jumper', 'pages', 'size-picker']"
+                  :page-count="(pageTotal.value % queryObj.pageSize) > 0 ? (pageTotal.value % queryObj.pageSize) : 1"
+                  show-quick-jumper
+                  show-size-picker
+                  :page-sizes="[queryObj.pageSize]"
+                  :on-update:page="page => {
+                pageChange(page)
+              }"
+              />
+            </n-card>
+          </template>
+        </TransitionGroup>
+      </n-space>
+
+      <!--无数据的时候显示-->
+      <n-empty v-if="!loading && smallNoteList.length === 0" style="margin: 20px auto" size="huge" description="暂无小记,请添加小记">
+        <template #icon>
+          <n-icon :component="SubtitlesOffOutlined"></n-icon>
+        </template>
+        <template #extra>
+          <n-button>创建小记</n-button>
+        </template>
+      </n-empty>
     </n-card>
   </n-layout>
 </template>
 
 <style scoped>
-.n-card.thing-card-finished::after{
+.n-card.thing-card-finished::after {
   position: absolute;
   content: '';
   width: 100px;
@@ -169,5 +303,9 @@ const changeTopStatus = (smallNoteId,isTopValue) => {
   background-repeat: no-repeat;
   /*只对有像素的部分进行投影*/
   filter: drop-shadow(5px 5px 2px v-bind(thingFinishShadowColor));
+}
+
+.n-card.small-note-cards {
+  transition: all 0.5s;
 }
 </style>
