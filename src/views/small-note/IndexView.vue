@@ -44,7 +44,7 @@ const smallNoteList = ref([]);
 const queryObj = ref({
   userId: userId.value,
   page: 1,//当前页
-  pageSize: 12//显示记录数
+  pageSize: 8//显示记录数
 })
 const pageChange = (nowPage) => {
   queryObj.value.page = nowPage;
@@ -65,14 +65,22 @@ const getSmallNoteList = (isLoading, pageObj) => {
       //查找成功
       smallNoteList.value = res.data.data.record;
       pageTotal.value = res.data.data.total;
+      console.log(pageTotal.value % queryObj.value.pageSize)
       loadingBar.finish();
       if (isLoading) loading.value = false;
     }
   }).catch(err => {
-    loadingBar.error;
+    loadingBar.error();
   })
 }
-
+//计算页数
+const computedPageCount = computed(() => {
+  if(pageTotal.value < queryObj.value.pageSize){
+    return 1;
+  }else{
+    return (pageTotal.value % queryObj.value.pageSize) + 1;
+  }
+})
 //小记是否置顶按钮显示
 const isTopIconText = top => {
   if (top) {
@@ -127,33 +135,87 @@ const enterEvent = (el, done) => {
     y: 0,
     opacity: 1,
     duration: 0.5,
-    delay:el.dataset.index * 0.12,
+    delay: el.dataset.index * 0.12,
     onComplete: done
+  })
+}
+//离开前
+const beforeLeave = (el) => {
+  gsap.set(el,{
+    opacity:1,
+    scale:1,
+    position:'fixed',
+    top:0,
+    left:'50%'
+  })
+}
+const leaveEvent = (el,done) => {
+  gsap.to(el,{
+    scale:0.01,
+    opacity:0,
+    duration:0.5,
+    onComplete:done
   })
 }
 //计算css样式
 const changePageCss = computed(() => {
-  if(smallNoteList.value.length <= 3){
+  if (smallNoteList.value.length <= 4) {
     return 'top:-10%;left:380px'
-  }else if(smallNoteList.value.length > 3 && smallNoteList.value.length <= 6){
+  } else if (smallNoteList.value.length > 4 && smallNoteList.value.length <= 8) {
     return 'top:30%;left:380px'
-  }else{
-    return 'top:53%;left:380px'
   }
 })
 const cardBelowCss = computed(() => {
-  if(smallNoteList.value.length <= 3){
+  if (smallNoteList.value.length <= 4) {
     return 'height:380px;'
-  }else if(smallNoteList.value.length > 3 && smallNoteList.value.length <= 6){
+  } else if (smallNoteList.value.length > 4 && smallNoteList.value.length <= 8) {
     return 'height:600px;'
-  }else{
-    return 'height:880px;'
   }
 })
+//引入`删除提示框`
+import DelDialog from '@/components/message/DelDialog.vue'
+//声明删除提醒框内容
+const deleteDialogObj = ref({
+  show:false,//是否显示
+  smallNoteId:null,//小记id
+  desc:null//小记描述
+})
+//声明获取删除的信息
+const deleteDialog = (id,title) => {
+  deleteDialogObj.value.show = true;
+  deleteDialogObj.value.smallNoteId = id;
+  deleteDialogObj.value.desc = "确定删除《"+title+"》么?";
+}
+//声明删除删除事件
+const delSmallNote = (delStatus) => {
+  loadingBar.start();
+  //逻辑删除
+  const delObj = {
+    userId : userId.value,
+    smallNoteId : deleteDialogObj.value.smallNoteId, //删除的小记id
+    deleteType : delStatus
+  }
+  SmallNoteApi.deleteSmallNote(delObj).then(res => {
+    if(res.data.code === 60005){
+      //删除成功
+      message.success(res.data.message)
+      //关闭删除提示框
+      deleteDialogObj.value.show = false;
+      loadingBar.finish();
+      //重新显示数据
+      getSmallNoteList();
+    }else{
+      message.error('删除失败，请联系管理员')
+      loadingBar.error();
+    }
+  }).catch(err => {
+    console.log(err)
+  })
+}
 </script>
 
 <template>
-  <n-layout embedded content-style="padding:24px" >
+  <n-layout embedded content-style="padding:24px">
     <!--小记页面头部-->
     <n-card size="small" style="border-radius: 10px;border: 1px solid red;box-shadow: 0 2px 4px skyblue;">
       <!--标题-->
@@ -169,7 +231,7 @@ const cardBelowCss = computed(() => {
     <n-card size="small" :bordered="false"
             style="margin-top: 20px;border-radius: 10px;border: 1px solid lightcoral;box-shadow: 0 2px 4px skyblue;"
             :style="cardBelowCss"
-            >
+    >
       <!--骨架屏-->
       <n-space v-if="loading">
         <n-card :segmented="{'content':'soft'}"
@@ -177,7 +239,7 @@ const cardBelowCss = computed(() => {
                 :style="thingFinishShadowColor"
                 style="width: 330px;height: 130px;min-width: 230px;max-width:max-content"
                 embedded
-                v-for="n in 12">
+                v-for="n in 8">
           <template #header>
             <n-skeleton :width="180" height="20px"/>
           </template>
@@ -198,11 +260,12 @@ const cardBelowCss = computed(() => {
       </n-space>
       <!--显示数据内容-->
       <n-space :wrap-item="false">
-        <TransitionGroup @before-enter="beforeEnter" @enter="enterEvent">
+        <TransitionGroup @before-enter="beforeEnter" @enter="enterEvent" @before-leave="beforeLeave" @leave="leaveEvent"
+        move-class="move-transition">
           <template v-if="!loading && smallNoteList.length > 0">
-            <n-card class="small-note-cards"
+            <n-card class="thing-cards"
                     v-for="(smallNote,index) in smallNoteList"
-                    key="smallNote.id"
+                    :key="smallNote.id"
                     :data-index="index"
                     :class="{'thing-card-finished' : smallNote.isFinished}"
                     :segmented="{'content':'soft'}"
@@ -210,12 +273,12 @@ const cardBelowCss = computed(() => {
                     embedded
                     :title="smallNote.title"
                     :style="thingFinishShadowColor"
-                    style="min-width:220px;max-width:305px;height: 220px;margin-top: 15px;margin-left: 25px;overflow:auto;">
+                    style="min-width:220px;max-width:305px;height: 220px;margin-top: 15px;margin-left: 25px;">
               <template #header-extra>
                 <!--删除按钮-->
                 <n-popover>
                   <template #trigger>
-                    <n-button text style="margin-left: 10px">
+                    <n-button text @click="deleteDialog(smallNote.id,smallNote.title)" style="margin-left: 10px">
                       <n-icon :size="18" :component="DeleteForeverSharp"/>
                     </n-button>
                   </template>
@@ -245,6 +308,7 @@ const cardBelowCss = computed(() => {
                 <n-space>
                   <n-tag v-if="smallNote.isTop" size="small" :bordered="false" type="success">置顶</n-tag>
                   <n-tag v-for="tag in smallNote.tags.split(',')" size="small" :bordered="false">{{ tag }}</n-tag>
+
                 </n-space>
               </template>
               <template #footer>
@@ -263,21 +327,20 @@ const cardBelowCss = computed(() => {
             >
               <n-pagination
                   :display-order="['quick-jumper', 'pages', 'size-picker']"
-                  :page-count="(pageTotal.value % queryObj.pageSize) > 0 ? (pageTotal.value % queryObj.pageSize) : 1"
+                  :page-count="computedPageCount"
                   show-quick-jumper
                   show-size-picker
                   :page-sizes="[queryObj.pageSize]"
                   :on-update:page="page => {
-                pageChange(page)
-              }"
+                  pageChange(page)}"
               />
             </n-card>
           </template>
         </TransitionGroup>
       </n-space>
-
       <!--无数据的时候显示-->
-      <n-empty v-if="!loading && smallNoteList.length === 0" style="margin: 20px auto" size="huge" description="暂无小记,请添加小记">
+      <n-empty v-if="!loading && smallNoteList.length === 0" style="margin: 20px auto" size="huge"
+               description="暂无小记,请添加小记">
         <template #icon>
           <n-icon :component="SubtitlesOffOutlined"></n-icon>
         </template>
@@ -287,9 +350,18 @@ const cardBelowCss = computed(() => {
       </n-empty>
     </n-card>
   </n-layout>
+  <DelDialog :describe="deleteDialogObj.desc ? deleteDialogObj.desc : '显示失效，请联系管理员'"
+             :show="deleteDialogObj.show"
+             @delete="delSmallNote"
+             @cancel = "deleteDialogObj.show = false"
+             :delete-complete-btn="false" />
 </template>
 
-<style scoped>
+<style>
+.move-transition {
+  transition: all 0.5s ;
+}
+
 .n-card.thing-card-finished::after {
   position: absolute;
   content: '';
@@ -305,7 +377,4 @@ const cardBelowCss = computed(() => {
   filter: drop-shadow(5px 5px 2px v-bind(thingFinishShadowColor));
 }
 
-.n-card.small-note-cards {
-  transition: all 0.5s;
-}
 </style>

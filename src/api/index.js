@@ -92,3 +92,37 @@ export function post(url, params = {}) {
             })
     });
 }
+/**
+ * delete，对应delete请求
+ * @param url
+ * @param params
+ */
+export function del(url, params = {}) {
+    return new Promise((resolve, reject) => {
+        axios.delete(url, { data: params })
+            .then(res => {
+                resolve(res);
+            })
+            .catch(err => {
+                reject(err);
+            });
+    });
+}
+
+/**
+ * put请求
+ * @param url
+ * @param params
+ * @returns {Promise<unknown>}
+ */
+export function put(url, params = {}) {
+    return new Promise((resolve, reject) => {
+        axios.put(url, params)
+            .then(res => {
+                resolve(res);
+            })
+            .catch(err => {
+                reject(err);
+            });
+    });
+}
