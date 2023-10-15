@@ -7,7 +7,7 @@ import {
   ArrowCircleUpOutlined,
   ArrowCircleDownOutlined,
   EditFilled,
-  SubtitlesOffOutlined
+  SubtitlesOffOutlined,
 } from '@vicons/material'
 //引入消息组件
 import {useMessage} from 'naive-ui'
@@ -75,9 +75,9 @@ const getSmallNoteList = (isLoading, pageObj) => {
 }
 //计算页数
 const computedPageCount = computed(() => {
-  if(pageTotal.value < queryObj.value.pageSize){
+  if (pageTotal.value < queryObj.value.pageSize) {
     return 1;
-  }else{
+  } else {
     return (pageTotal.value % queryObj.value.pageSize) + 1;
   }
 })
@@ -141,20 +141,20 @@ const enterEvent = (el, done) => {
 }
 //离开前
 const beforeLeave = (el) => {
-  gsap.set(el,{
-    opacity:1,
-    scale:1,
-    position:'fixed',
-    top:0,
-    left:'50%'
+  gsap.set(el, {
+    opacity: 1,
+    scale: 1,
+    position: 'fixed',
+    top: 0,
+    left: '50%'
   })
 }
-const leaveEvent = (el,done) => {
-  gsap.to(el,{
-    scale:0.01,
-    opacity:0,
-    duration:0.5,
-    onComplete:done
+const leaveEvent = (el, done) => {
+  gsap.to(el, {
+    scale: 0.01,
+    opacity: 0,
+    duration: 0.5,
+    onComplete: done
   })
 }
 //计算css样式
@@ -172,31 +172,38 @@ const cardBelowCss = computed(() => {
     return 'height:600px;'
   }
 })
+const computedIsPromptCss = (item) => {
+  if(item.isPrompt){
+    return 'height:220px'
+  }else {
+    return 'height:130px'
+  }
+}
 //引入`删除提示框`
 import DelDialog from '@/components/message/DelDialog.vue'
 //声明删除提醒框内容
 const deleteDialogObj = ref({
-  show:false,//是否显示
-  smallNoteId:null,//小记id
-  desc:null//小记描述
+  show: false,//是否显示
+  smallNoteId: null,//小记id
+  desc: null//小记描述
 })
 //声明获取删除的信息
-const deleteDialog = (id,title) => {
+const deleteDialog = (id, title) => {
   deleteDialogObj.value.show = true;
   deleteDialogObj.value.smallNoteId = id;
-  deleteDialogObj.value.desc = "确定删除《"+title+"》么?";
+  deleteDialogObj.value.desc = "确定删除《" + title + "》么?";
 }
 //声明删除删除事件
 const delSmallNote = (delStatus) => {
   loadingBar.start();
   //逻辑删除
   const delObj = {
-    userId : userId.value,
-    smallNoteId : deleteDialogObj.value.smallNoteId, //删除的小记id
-    deleteType : delStatus
+    userId: userId.value,
+    smallNoteId: deleteDialogObj.value.smallNoteId, //删除的小记id
+    deleteType: delStatus
   }
   SmallNoteApi.deleteSmallNote(delObj).then(res => {
-    if(res.data.code === 60005){
+    if (res.data.code === 60005) {
       //删除成功
       message.success(res.data.message)
       //关闭删除提示框
@@ -204,7 +211,7 @@ const delSmallNote = (delStatus) => {
       loadingBar.finish();
       //重新显示数据
       getSmallNoteList();
-    }else{
+    } else {
       message.error('删除失败，请联系管理员')
       loadingBar.error();
     }
@@ -212,9 +219,23 @@ const delSmallNote = (delStatus) => {
     console.log(err)
   })
 }
+//引入编辑小记组件
+import EditSmallNoteModal from '@/components/smallNote/EditSmallNoteModal.vue'
+//计算倒计时剩余时间
+const countDownTime = (beginTime,endTime) => {
+  beginTime = new Date(beginTime);
+  endTime = new Date(endTime);
+  const nowTime = new Date();
+  if(nowTime > beginTime){
+    return endTime - nowTime;
+  }else{
+    return null
+  }
+}
 </script>
 
 <template>
+  <!--小记显示框-->
   <n-layout embedded content-style="padding:24px">
     <!--小记页面头部-->
     <n-card size="small" style="border-radius: 10px;border: 1px solid red;box-shadow: 0 2px 4px skyblue;">
@@ -261,7 +282,7 @@ const delSmallNote = (delStatus) => {
       <!--显示数据内容-->
       <n-space :wrap-item="false">
         <TransitionGroup @before-enter="beforeEnter" @enter="enterEvent" @before-leave="beforeLeave" @leave="leaveEvent"
-        move-class="move-transition">
+                         move-class="move-transition">
           <template v-if="!loading && smallNoteList.length > 0">
             <n-card class="thing-cards"
                     v-for="(smallNote,index) in smallNoteList"
@@ -271,14 +292,14 @@ const delSmallNote = (delStatus) => {
                     :segmented="{'content':'soft'}"
                     size="small"
                     embedded
-                    :title="smallNote.title"
-                    :style="thingFinishShadowColor"
-                    style="min-width:220px;max-width:305px;height: 220px;margin-top: 15px;margin-left: 25px;">
+                    :title="smallNote.smallNoteTitle"
+                    :style="thingFinishShadowColor,computedIsPromptCss(smallNote)"
+                    style="min-width:220px;max-width:305px;margin-top: 15px;margin-left: 25px;">
               <template #header-extra>
                 <!--删除按钮-->
                 <n-popover>
                   <template #trigger>
-                    <n-button text @click="deleteDialog(smallNote.id,smallNote.title)" style="margin-left: 10px">
+                    <n-button text @click="deleteDialog(smallNote.id,smallNote.smallNoteTitle)" style="margin-left: 10px">
                       <n-icon :size="18" :component="DeleteForeverSharp"/>
                     </n-button>
                   </template>
@@ -307,17 +328,20 @@ const delSmallNote = (delStatus) => {
               <template #default>
                 <n-space>
                   <n-tag v-if="smallNote.isTop" size="small" :bordered="false" type="success">置顶</n-tag>
-                  <n-tag v-for="tag in smallNote.tags.split(',')" size="small" :bordered="false">{{ tag }}</n-tag>
+                  <n-tag v-for="tag in smallNote.smallNoteTags.split(',')" size="small" :bordered="false">{{ tag }}</n-tag>
 
                 </n-space>
               </template>
               <template #footer>
-                <n-space align="center">
+                <n-space align="center" v-if="smallNote.isPrompt">
                   <!--<n-divider style="background-color: lightblue;margin-left: 2px;margin-right: 2px" v-if="smallNote.isTop" vertical/>-->
-                  <n-text depth="3">创建时间 ：{{ smallNote.createTime }}</n-text>
-                  <n-text depth="3">完成时间 ：尚未完成哦!</n-text>
+                  <n-text depth="3">开始时间 ：{{ smallNote.beginTime }}</n-text>
+                  <n-text depth="3">完成时间 ：{{ smallNote.endTime }}</n-text>
                   <br>
-                  <n-text depth="3">剩余时间 ：200s</n-text>
+                  <n-text depth="3">剩余时间 ：
+                    <n-countdown v-if="new Date(smallNote.endTime) > new Date()" :duration="countDownTime(smallNote.beginTime,smallNote.endTime)" :active="true" />
+                    <n-gradient-text v-else type="warning">规定时间已经走完了哦!</n-gradient-text>
+                  </n-text>
                 </n-space>
               </template>
             </n-card>
@@ -350,16 +374,19 @@ const delSmallNote = (delStatus) => {
       </n-empty>
     </n-card>
   </n-layout>
+  <!--删除小记提示框-->
   <DelDialog :describe="deleteDialogObj.desc ? deleteDialogObj.desc : '显示失效，请联系管理员'"
              :show="deleteDialogObj.show"
              @delete="delSmallNote"
-             @cancel = "deleteDialogObj.show = false"
-             :delete-complete-btn="false" />
+             @cancel="deleteDialogObj.show = false"
+             :delete-complete-btn="false"/>
+  <!--编辑小记窗口-->
+  <edit-small-note-modal/>
 </template>
 
-<style>
+<style scoped>
 .move-transition {
-  transition: all 0.5s ;
+  transition: all 0.5s;
 }
 
 .n-card.thing-card-finished::after {
