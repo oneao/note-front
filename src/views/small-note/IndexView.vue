@@ -62,6 +62,7 @@ const getSmallNoteList = (isLoading, pageObj) => {
   SmallNoteApi.getSmallNote(pageObj).then(res => {
     loadingBar.start();
     if (res && res.data.code === 200) {
+      console.log(res)
       //查找成功
       smallNoteList.value = res.data.data.record;
       pageTotal.value = res.data.data.total;
@@ -78,7 +79,7 @@ const computedPageCount = computed(() => {
   if (pageTotal.value < queryObj.value.pageSize) {
     return 1;
   } else {
-    return (pageTotal.value % queryObj.value.pageSize) + 1;
+    return ( Math.floor(pageTotal.value / queryObj.value.pageSize)) + 1;
   }
 })
 //小记是否置顶按钮显示
@@ -232,6 +233,8 @@ const countDownTime = (beginTime,endTime) => {
     return null
   }
 }
+//声明编辑小记对象
+const editSmallNoteModalRef = ref(null)
 </script>
 
 <template>
@@ -241,12 +244,12 @@ const countDownTime = (beginTime,endTime) => {
     <n-card size="small" style="border-radius: 10px;border: 1px solid red;box-shadow: 0 2px 4px skyblue;">
       <!--标题-->
       <template #header>
-        <h3 style="margin-left: 700px">小记列表</h3>
+        <h3>小记列表</h3>
       </template>
-      <!--&lt;!&ndash;新增按钮&ndash;&gt;-->
-      <!--<template #header-extra>-->
-      <!--  <n-button style="margin-right: 500px">新增小记</n-button>-->
-      <!--</template>-->
+      <!--新增按钮-->
+      <template #header-extra>
+        <n-button @click="editSmallNoteModalRef.showEditModal(null)">新增小记</n-button>
+      </template>
     </n-card>
     <!--小记页面底部-->
     <n-card size="small" :bordered="false"
@@ -318,7 +321,7 @@ const countDownTime = (beginTime,endTime) => {
                 <!--编辑按钮-->
                 <n-popover>
                   <template #trigger>
-                    <n-button text style="margin-left: 10px">
+                    <n-button text style="margin-left: 10px" @click="editSmallNoteModalRef.showEditModal(smallNote.id)">
                       <n-icon :size="18" :component="EditFilled"/>
                     </n-button>
                   </template>
@@ -329,7 +332,6 @@ const countDownTime = (beginTime,endTime) => {
                 <n-space>
                   <n-tag v-if="smallNote.isTop" size="small" :bordered="false" type="success">置顶</n-tag>
                   <n-tag v-for="tag in smallNote.smallNoteTags.split(',')" size="small" :bordered="false">{{ tag }}</n-tag>
-
                 </n-space>
               </template>
               <template #footer>
@@ -369,7 +371,7 @@ const countDownTime = (beginTime,endTime) => {
           <n-icon :component="SubtitlesOffOutlined"></n-icon>
         </template>
         <template #extra>
-          <n-button>创建小记</n-button>
+          <n-button @click="editSmallNoteModalRef.showEditModal(null)">创建小记</n-button>
         </template>
       </n-empty>
     </n-card>
@@ -381,7 +383,7 @@ const countDownTime = (beginTime,endTime) => {
              @cancel="deleteDialogObj.show = false"
              :delete-complete-btn="false"/>
   <!--编辑小记窗口-->
-  <edit-small-note-modal/>
+  <edit-small-note-modal ref="editSmallNoteModalRef" @save="getSmallNoteList(true,queryObj)"/>
 </template>
 
 <style scoped>
