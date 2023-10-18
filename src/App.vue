@@ -1,19 +1,39 @@
 <script setup>
-import MainTopToolBar from "@/components/toolbar/MainTopToolBar.vue";
-import ShowModal from "@/components/login/ShowModal.vue";
+import RootView from '@/views/RootView.vue'
 import {storeToRefs} from "pinia";
-import {onMounted} from "vue";
-
+import {onMounted, provide,watch} from "vue";
+//主題
 import {useThemeStore} from "@/stores/themeStore";
 
 const themeStore = useThemeStore();
 const {theme} = storeToRefs(themeStore);
-const {changeTheme} = themeStore;
+//用戶
+import {useUserStore} from "@/stores/userStore";
+
+const userStore = useUserStore();
+const {token} = storeToRefs(userStore)
+//是否需要强制加载页面
+const needReload = ref(false)
+//为后代组件提供数据
+provide('needReload', needReload)
+
 onMounted(() => {
   window.addEventListener('storage', event => {
     if (event.key === 'theme') {
-      const newTheme = JSON.parse(event.newValue);
-      changeTheme(newTheme.isDarkTheme);
+      themeStore.$hydrate()
+    } else if (event.key === 'user') {
+      //这串代码的意思是 只要不是user里面的token发生变化，都不会强制要求刷新页面
+      const newToken = JSON.parse(event.newValue).token
+      const oldToken = JSON.parse(event.oldValue).token
+      if (newToken === oldToken) {
+        userStore.$hydrate()
+      } else {
+        //window.location.reload();//强制刷新页面
+        needReload.value = true
+        setTimeout(() => {
+          needReload.value = false
+        }, 1000)
+      }
     }
   })
 })
@@ -25,27 +45,12 @@ onMounted(() => {
     <n-loading-bar-provider>
       <!--通知-->
       <n-notification-provider>
-        <!--      消息提示-->
-        <n-message-provider>
-          <!-- 页面布局 -->
-          <n-layout position="absolute">
-            <!--头部-->
-            <n-layout-header bordered style="height:64px;padding: 0 20px;">
-              <MainTopToolBar/>
-            </n-layout-header>
-            <!--    底部-->
-            <n-layout position="absolute" style="top: 64px" has-sider>
-              <!--左侧应用栏-->
-              <n-layout-sider width="64px" bordered content-style="padding: 24px 0;text-align:center;">
-                海淀桥
-              </n-layout-sider>
-              <!--主页面-->
-              <router-view/>
-            </n-layout>
-          </n-layout>
-          <!-- 登录模态框 -->
-          <show-modal/>
-        </n-message-provider>
+        <n-dialog-provider>
+          <!--      消息提示-->
+          <n-message-provider>
+            <root-view/>
+          </n-message-provider>
+        </n-dialog-provider>
       </n-notification-provider>
     </n-loading-bar-provider>
   </n-config-provider>

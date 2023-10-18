@@ -1,6 +1,6 @@
 <script setup>
 import {EmailOutlined, LockOutlined} from "@vicons/material"; //图标
-import {ref,computed} from 'vue';
+import {ref, computed} from 'vue';
 import {useMessage, useLoadingBar} from "naive-ui";
 
 const message = useMessage();
@@ -68,12 +68,15 @@ import {handOffModalStore} from '@/stores/loginModalStore'
 
 const modalStore = handOffModalStore();
 const {changeModalStatus} = modalStore;
+//禁用登录按钮
+import {disabledBtn} from "@/utils/disabledBtn";
+
 const handleValidateClick = (e) => {
   e.preventDefault();
   loginFormRef.value?.validate((errors) => {
     if (!errors) {
       loadingBar.start(); //加载条开始
-      loginBtnDisabled.value = true; //禁用按钮
+      disabledBtn(loginBtnDisabled, true)  //禁用登录按钮
       const loginForm = {
         email: loginFormData.value.email,
         password: loginFormData.value.password
@@ -86,16 +89,13 @@ const handleValidateClick = (e) => {
           message.success(res.data.message);
           changeModalStatus(false); //关闭登录模态框
           localStorage.setItem("token", res.data.data.token) //存储token
-          setUserInfo(user.id, user.email, user.nickName, user.avatar, user.level, user.createTime);
+          setUserInfo(res.data.data.token, user.id, user.email, user.nickName, user.avatar, user.level, user.createTime);
         } else {
           //登录失败
           loadingBar.error(); //加载条异常结束
           message.error(res.data.message);
         }
-        //2.5s后解除登录按钮
-        setTimeout(() => {
-          loginBtnDisabled.value = false;
-        }, 1500)
+        disabledBtn(loginBtnDisabled, false, true, 2)
       }).catch(err => {
         console.log(err)
         loadingBar.error(); //加载条异常结束

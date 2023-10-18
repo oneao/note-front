@@ -1,6 +1,7 @@
 <script setup>
-import {computed, onMounted} from "vue";
+import {computed, onMounted, watch} from "vue";
 import {storeToRefs} from "pinia";
+
 //引入图片
 import {
   DeleteForeverSharp,
@@ -29,14 +30,20 @@ const thingFinishShadowColor = computed(() => {
 })
 //引入用户信息store
 import {useUserStore} from "@/stores/userStore";
-
 const userStore = useUserStore();
-const {id: userId} = storeToRefs(userStore);
+const {id: userId,token} = storeToRefs(userStore);
+watch(() => token.value,newData => {
+  //window.location.reload();//强制刷新页面
+  loading.value = true;
+  getSmallNoteList(true,false);
+})
+//引入禁用
+import {disabledBtn} from "@/utils/disabledBtn";
 //引入小记Api
 import SmallNoteApi from '@/api/smallNote'
 //进入页面加载
 onMounted(() => {
-  getSmallNoteList(true, queryObj);
+  getSmallNoteList(true,false);
 })
 //小记列表对象
 const smallNoteList = ref([]);
@@ -44,19 +51,30 @@ const smallNoteList = ref([]);
 const queryObj = ref({
   userId: userId.value,
   page: 1,//当前页
-  pageSize: 8//显示记录数
+  pageSize: 8,//显示记录数,
+  filterValue:null,//过滤条件
+  searchValue:null//查询条件
 })
 const pageChange = (nowPage) => {
   queryObj.value.page = nowPage;
   getSmallNoteList(true, queryObj);
 }
+//总页数
 const pageTotal = ref();
+//显示小记卡片是否需要延迟动画
+let enterDelay = true
+//隐藏小记卡片是否需要动画
+let hiddenAnimation = true
 //获取小记列表
-const getSmallNoteList = (isLoading, pageObj) => {
-  pageObj = {
+const getSmallNoteList = (ed,ha) => {
+  enterDelay = ed//显示小记卡片是否需要延迟动画
+  hiddenAnimation = ha//隐藏小记卡片是否需要动画
+  const pageObj = {
     userId: queryObj.value.userId,
     page: queryObj.value.page,
-    pageSize: queryObj.value.pageSize
+    pageSize: queryObj.value.pageSize,
+    filterValue:queryObj.value.filterValue,
+    searchValue:queryObj.value.searchValue
   }
   //获取当前登录用户的小记信息
   SmallNoteApi.getSmallNote(pageObj).then(res => {
@@ -66,9 +84,8 @@ const getSmallNoteList = (isLoading, pageObj) => {
       //查找成功
       smallNoteList.value = res.data.data.record;
       pageTotal.value = res.data.data.total;
-      console.log(pageTotal.value % queryObj.value.pageSize)
       loadingBar.finish();
-      if (isLoading) loading.value = false;
+      if (loading.value) loading.value = false;
     }
   }).catch(err => {
     loadingBar.error();
@@ -101,7 +118,7 @@ const smallNoteTopButton = ref(false);
 //改变指定小记的置顶状态
 const changeTopStatus = (smallNoteId, isTopValue) => {
   //禁用小记置顶按钮
-  smallNoteTopButton.value = true;
+  disabledBtn(smallNoteTopButton,true)
   const changeTop = {
     userId: userId.value,
     smallNoteId: smallNoteId,
@@ -112,11 +129,13 @@ const changeTopStatus = (smallNoteId, isTopValue) => {
       message.success(res.data.message)
       //取消小记置顶按钮
       smallNoteTopButton.value = false;
-      getSmallNoteList(false);
+      getSmallNoteList(false,false);
     } else {
       message.error('服务端错误')
     }
+    disabledBtn(smallNoteTopButton,false,true,2)
   }).catch(err => {
+    disabledBtn(smallNoteTopButton,false,true,2)
     console.log(err)
   })
 }
@@ -136,38 +155,53 @@ const enterEvent = (el, done) => {
     y: 0,
     opacity: 1,
     duration: 0.5,
-    delay: el.dataset.index * 0.12,
+    delay:()=>(enterDelay ? el.dataset.index * 0.12 : 0),
     onComplete: done
   })
 }
 //离开前
 const beforeLeave = (el) => {
-  gsap.set(el, {
-    opacity: 1,
-    scale: 1,
-    position: 'fixed',
-    top: 0,
-    left: '50%'
-  })
+  if(hiddenAnimation){
+    const left = el.offsetLeft
+    const top = el.offsetTop
+    gsap.set(el,{
+      position:'absolute',
+      boxShadow:'0 0 5px black',
+      zIndex:1,
+      top,
+      left
+    })
+  }
 }
 const leaveEvent = (el, done) => {
-  gsap.to(el, {
-    scale: 0.01,
-    opacity: 0,
-    duration: 0.5,
-    onComplete: done
-  })
+  if(hiddenAnimation){
+    let tl = gsap.timeline()
+    tl.to(el,{
+      scale:1.3,
+      duration:0.25
+    }).to(el,{
+      scale:0,
+      duration:0.25,
+      onComplete:done
+    })
+  }else {
+    gsap.to(el, {
+
+      duration: 0,
+      onComplete: done
+    })
+  }
 }
 //计算css样式
 const changePageCss = computed(() => {
-  if (smallNoteList.value.length <= 4) {
+  if (smallNoteList.value === null ||smallNoteList.value.length <= 4) {
     return 'top:-10%;left:380px'
   } else if (smallNoteList.value.length > 4 && smallNoteList.value.length <= 8) {
     return 'top:30%;left:380px'
   }
 })
 const cardBelowCss = computed(() => {
-  if (smallNoteList.value.length <= 4) {
+  if (smallNoteList.value === null || smallNoteList.value.length <= 4) {
     return 'height:380px;'
   } else if (smallNoteList.value.length > 4 && smallNoteList.value.length <= 8) {
     return 'height:600px;'
@@ -196,12 +230,13 @@ const deleteDialog = (id, title) => {
 }
 //声明删除删除事件
 const delSmallNote = (delStatus) => {
+  deleteDialogObj.value.show = false;//关闭提醒框
   loadingBar.start();
   //逻辑删除
   const delObj = {
     userId: userId.value,
     smallNoteId: deleteDialogObj.value.smallNoteId, //删除的小记id
-    deleteType: delStatus
+    deleteType: delStatus//逻辑删除
   }
   SmallNoteApi.deleteSmallNote(delObj).then(res => {
     if (res.data.code === 60005) {
@@ -211,7 +246,7 @@ const delSmallNote = (delStatus) => {
       deleteDialogObj.value.show = false;
       loadingBar.finish();
       //重新显示数据
-      getSmallNoteList();
+      getSmallNoteList(false,true);
     } else {
       message.error('删除失败，请联系管理员')
       loadingBar.error();
@@ -235,6 +270,26 @@ const countDownTime = (beginTime,endTime) => {
 }
 //声明编辑小记对象
 const editSmallNoteModalRef = ref(null)
+//过滤选项
+const filterOptions = [
+  {
+    label:'默认',
+    value:null
+  },
+  {
+    label: '未完成',
+    value: 0
+  },
+  {
+    label: '已完成',
+    value: 1
+  }
+]
+//触发过滤方法
+const filterMethod = () => {
+  //queryObj.value.searchValue = null;
+  getSmallNoteList(true)
+}
 </script>
 
 <template>
@@ -248,7 +303,18 @@ const editSmallNoteModalRef = ref(null)
       </template>
       <!--新增按钮-->
       <template #header-extra>
-        <n-button @click="editSmallNoteModalRef.showEditModal(null)">新增小记</n-button>
+        <n-space>
+          <n-select v-model:value="queryObj.filterValue" :options="filterOptions"
+                    @update:value="filterMethod"
+                    placeholder="默认" style="width:130px"></n-select>
+          <!--搜索输入框-->
+          <n-input-group>
+            <n-input v-model:value="queryObj.searchValue" placeholder="请输入搜索条件"></n-input>
+            <n-button @click="getSmallNoteList(true)">搜索</n-button>
+          </n-input-group>
+          <!--过滤选项-->
+          <n-button @click="editSmallNoteModalRef.showEditModal(null)">新增小记</n-button>
+        </n-space>
       </template>
     </n-card>
     <!--小记页面底部-->
@@ -259,19 +325,19 @@ const editSmallNoteModalRef = ref(null)
       <!--骨架屏-->
       <n-space v-if="loading">
         <n-card :segmented="{'content':'soft'}"
-                size="small"
+                size="large"
                 :style="thingFinishShadowColor"
-                style="width: 330px;height: 130px;min-width: 230px;max-width:max-content"
+                style="width: 380px;height: 160px;margin-left: 10px;min-width: 230px;max-width:max-content;margin-top: 10px"
                 embedded
                 v-for="n in 8">
           <template #header>
-            <n-skeleton :width="180" height="20px"/>
+            <n-skeleton :width="180"  height="20px"/>
           </template>
           <template #header-extra>
             <n-skeleton :width="20" :height="20" style="margin-left: 6px" circle :repeat="3"></n-skeleton>
           </template>
           <template #default>
-            <n-space>
+            <n-space >
               <n-skeleton :width="30" :height="15"></n-skeleton>
               <n-skeleton :width="30" :height="15"></n-skeleton>
               <n-skeleton :width="30" :height="15"></n-skeleton>
@@ -286,7 +352,8 @@ const editSmallNoteModalRef = ref(null)
       <n-space :wrap-item="false">
         <TransitionGroup @before-enter="beforeEnter" @enter="enterEvent" @before-leave="beforeLeave" @leave="leaveEvent"
                          move-class="move-transition">
-          <template v-if="!loading && smallNoteList.length > 0">
+          <!---->
+          <template v-if="!loading && smallNoteList !== null">
             <n-card class="thing-cards"
                     v-for="(smallNote,index) in smallNoteList"
                     :key="smallNote.id"
@@ -365,7 +432,7 @@ const editSmallNoteModalRef = ref(null)
         </TransitionGroup>
       </n-space>
       <!--无数据的时候显示-->
-      <n-empty v-if="!loading && smallNoteList.length === 0" style="margin: 20px auto" size="huge"
+      <n-empty v-if="!loading && smallNoteList === null " style="margin: 20px auto" size="huge"
                description="暂无小记,请添加小记">
         <template #icon>
           <n-icon :component="SubtitlesOffOutlined"></n-icon>

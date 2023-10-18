@@ -153,11 +153,15 @@ const resetCodeCountDownData = () => {
   codeCountDownData.value.time = 60;
   codeCountDownData.value.disabled = false;
 }
+//禁用注册按钮
+const disabledRegisterButton = ref(false)
+import {disabledBtn} from "@/utils/disabledBtn";
 //注册验证
 const handleValidateClick = (e) => {
   e.preventDefault();
   registerFormRef.value?.validate((errors) => {
     if (!errors) {
+      disabledBtn(disabledRegisterButton,true)
       const registerForm = {
         email : registerFormData.value.email,
         password: registerFormData.value.password,
@@ -171,6 +175,10 @@ const handleValidateClick = (e) => {
         }else{
           message.error(res.data.message)
         }
+        disabledBtn(disabledRegisterButton,false,true,2)
+      }).catch(err => {
+        console.log(err)
+        disabledBtn(disabledRegisterButton,false,true,2)
       })
     }
   });
@@ -237,9 +245,9 @@ const emits = defineEmits(['changeModal'])
         <n-checkbox v-model:checked="registerFormData.checked">同意</n-checkbox>
         <n-button text type="info">《存储条款》</n-button>
       </n-form-item>
-      <!--          登录-->
+      <!--          注册-->
       <n-form-item :show-label="false">
-        <n-button @click="handleValidateClick" block type="success" ghost>
+        <n-button :disabled="disabledRegisterButton" @click="handleValidateClick" block type="success" ghost>
           注册
         </n-button>
       </n-form-item>

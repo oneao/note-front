@@ -1,5 +1,5 @@
 <script setup>
-import {ref, computed, h} from "vue";
+import {ref, computed, h,onBeforeUnmount} from "vue";
 import {AddBoxRound, DeleteForeverFilled} from "@vicons/material";
 import {NSpace, NText} from 'naive-ui'
 import {useMessage} from 'naive-ui'
@@ -8,6 +8,17 @@ import {useLoadingBar} from 'naive-ui'
 const loadingBar = useLoadingBar()
 import {useNotification} from 'naive-ui'
 const notification = useNotification()
+import bus from 'vue3-eventbus'
+bus.on('createNewSmallNote',()=>{
+  showEditModal(null)
+})
+//组件卸载之前停止监听
+onBeforeUnmount(() => {
+  bus.off('createNewSmallNote')
+})
+//按钮禁用
+import {disabledBtn} from "@/utils/disabledBtn";
+const saveButtonDisabled = ref(false)
 //自定义事件
 const emits = defineEmits(['save'])
 //引入Api
@@ -57,6 +68,7 @@ const saveSmallNoteForm = () => {
   formRef.value?.validate((errors) => {
     if (!errors) {
       loadingBar.start();
+      disabledBtn(saveButtonDisabled,true)
       if (formObj.value.smallNoteId === null) {
         //新增
         addSmallNote();
@@ -100,13 +112,14 @@ const addSmallNote = () => {
     endTime: formObj.value.time[1]
   }
   SmallNoteApi.addSmallNote(addObj).then(res => {
+    disabledBtn(saveButtonDisabled,false,true,2)
     if (res.data.code === 60006) {
       //新增成功
       message.success(res.data.message)
       show.value = false;
       loadingBar.finish();
       //重新获取小记列表
-      emits('save'); //触发自定义事件
+      emits('save',false,false); //触发自定义事件
     }
   }).catch(errors => {
     console.log(errors)
@@ -147,6 +160,7 @@ const updateSmallNote = () => {
     endTime: formObj.value.time[1]
   }
   SmallNoteApi.updateSmallNote(obj).then(res => {
+    disabledBtn(saveButtonDisabled,false,true,2)
     if(res.data.code === 60004){
       message.success(res.data.message)
       show.value = false;
@@ -203,7 +217,8 @@ const disablePreviousDate = (ts) => {
 }
 </script>
 <template>
-  <n-modal v-model:show="show" :auto-focus="false" :on-after-leave="resetEditSmallNote">
+  <n-modal v-model:show="show" :auto-focus="false" :on-after-leave="resetEditSmallNote" transform-origin="center" :close-on-esc="false"
+  :mask-closable="false">
     <div>
       <!--骨架屏-->
       <n-card v-if="loading" style="width: 460px;text-align: center"
@@ -365,7 +380,7 @@ const disablePreviousDate = (ts) => {
         <template #action>
           <n-grid cols="2" :x-gap="12">
             <n-gi>
-              <n-button block ghost type="primary" @click="saveSmallNoteForm">保存</n-button>
+              <n-button :disabled="saveButtonDisabled" block ghost type="primary" @click="saveSmallNoteForm">保存</n-button>
             </n-gi>
             <n-gi>
               <n-button block tertiary @click="show = false">取消</n-button>

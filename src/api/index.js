@@ -2,6 +2,8 @@ import axios from "axios";
 import {handOffModalStore} from '@/stores/loginModalStore';
 import {createDiscreteApi} from 'naive-ui'
 import {useUserStore} from '@/stores/userStore'
+import {storeToRefs} from "pinia";
+
 //axios配置
 axios.defaults.baseURL = '/note'
 axios.defaults.timeout = 10000;
@@ -14,8 +16,8 @@ axios.interceptors.request.use(function (config) {
     if(config.url === '/user/login' || config.url === '/user/getCode' || config.url === '/user/register'){
         //
     }else{
+        let token = JSON.parse(window.localStorage.getItem("user")).token;
         let userInfo = window.localStorage.getItem("user")
-        let token = window.localStorage.getItem("token")
         if (token === null || token === ''){
             const { message, notification, dialog, loadingBar } = createDiscreteApi(
                 ['message']

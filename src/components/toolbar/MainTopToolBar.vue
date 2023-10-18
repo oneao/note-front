@@ -64,6 +64,9 @@ const updateMenuStatus = (key, item) => {
         //注销成功
         message.success(res.data.message)
         showPopover.value = true;
+        setTimeout(() => {
+          showPopover.value = false;
+        },1000)
         resetUserInfo();
         //删除本地存储信息
         window.localStorage.removeItem('token')

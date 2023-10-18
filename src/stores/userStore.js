@@ -1,15 +1,17 @@
-import {ref,computed} from 'vue'
+import {ref,computed,watch} from 'vue'
 import {defineStore} from "pinia";
 export const useUserStore = defineStore(
     "user",
     () => {
+        const token = ref(null)
         const id = ref(null)
         const email = ref('')
         const nickname = ref('')
         const headPic = ref('')
         const level = ref(0)
         const time = ref('')
-        const setUserInfo = (u_id,u_email,u_nickname,u_headPic,u_level,u_time) =>{
+        const setUserInfo = (u_token,u_id,u_email,u_nickname,u_headPic,u_level,u_time) =>{
+            token.value = u_token
             id.value = u_id
             email.value = u_email;
             nickname.value = u_nickname;
@@ -25,18 +27,24 @@ export const useUserStore = defineStore(
             }
         })
         const resetUserInfo = () => {
-            id.value = null;
-            email.value = null;
-            nickname.value = null;
-            headPic.value = null;
-            level.value = null;
-            time.value = null;
+            token.value = null
         }
-        return {id,email,nickname,headPic,level,time,setUserInfo,levelInfo,resetUserInfo}
+        watch(() => token.value,newData => {
+            if(newData === null){
+                id.value = null;
+                email.value = null;
+                nickname.value = null;
+                headPic.value = null;
+                level.value = null;
+                time.value = null;
+            }
+        })
+
+        return {token,id,email,nickname,headPic,level,time,setUserInfo,levelInfo,resetUserInfo}
     },{
         persist : {
             storage : localStorage,
-            paths:['id','email','nickname','headPic','level','time']
+            paths:['token','id','email','nickname','headPic','level','time']
         }
     }
 )
