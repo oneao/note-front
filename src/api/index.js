@@ -55,6 +55,7 @@ axios.interceptors.response.use(function (resp) {
         const {changeModalStatus} = handOffModalStore();
         changeModalStatus(true)
     }
+    //window.location.reload();//强制刷新页面
     //注意需要返回
     return resp
 },function (err){

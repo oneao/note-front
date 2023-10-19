@@ -3,6 +3,8 @@ import {EmailOutlined, LockOutlined} from "@vicons/material"; //图标
 import {ref, computed, h} from 'vue';
 import UserApi from '@/api/user'
 import { useMessage } from 'naive-ui'
+import md5 from 'js-md5'
+
 const message = useMessage();
 //登陆表单
 const registerFormData = ref({
@@ -164,7 +166,7 @@ const handleValidateClick = (e) => {
       disabledBtn(disabledRegisterButton,true)
       const registerForm = {
         email : registerFormData.value.email,
-        password: registerFormData.value.password,
+        password: md5(registerFormData.value.email+registerFormData.value.password),//进行md5加密
         code:registerFormData.value.code
       }
       UserApi.userRegister(registerForm).then(res => {

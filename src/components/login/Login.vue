@@ -2,6 +2,7 @@
 import {EmailOutlined, LockOutlined} from "@vicons/material"; //图标
 import {ref, computed} from 'vue';
 import {useMessage, useLoadingBar} from "naive-ui";
+import md5 from 'js-md5'
 
 const message = useMessage();
 const loadingBar = useLoadingBar();
@@ -79,7 +80,7 @@ const handleValidateClick = (e) => {
       disabledBtn(loginBtnDisabled, true)  //禁用登录按钮
       const loginForm = {
         email: loginFormData.value.email,
-        password: loginFormData.value.password
+        password: md5(loginFormData.value.email + loginFormData.value.password) //进行md5加盐加密
       }
       UserApi.userLogin(loginForm).then(res => {
         if (res.data.code === 60000) {

@@ -130,12 +130,15 @@ const addSmallNote = () => {
 const getOneSmallNote = () => {
   SmallNoteApi.getOneSmallNote(formObj.value.smallNoteId).then(res => {
     if(res.data.code === 200){
+      console.log(res)
+      console.log(new Date(res.data.data.beginTime).getTime())
+      console.log(new Date(res.data.data.endTime).getTime())
       formObj.value.smallNoteTitle = res.data.data.smallNoteTitle
       formObj.value.smallNoteTags = res.data.data.smallNoteTags.split(',')
       formObj.value.smallNoteEvents = JSON.parse(res.data.data.smallNoteEvents)
       formObj.value.smallNoteRemark = res.data.data.smallNoteRemark
       formObj.value.isTop = res.data.data.isTop === 1
-      if(res.data.data.isPrompt === 1){
+      if(res.data.data.isPrompt || 1 === res.data.data.isPrompt){
         formObj.value.isPrompt = true
         formObj.value.time[0] = new Date(res.data.data.beginTime).getTime();
         formObj.value.time[1] = new Date(res.data.data.endTime).getTime();
@@ -182,6 +185,7 @@ const resetEditSmallNote = () => {
   formObj.value.smallNoteRemark = '🌷🌷🌷'
   formObj.value.isPrompt = false
   formObj.value.isTop = false
+  formObj.value.time = [Date.now(), new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).getTime()]
 }
 //暴露函数
 defineExpose({showEditModal})
