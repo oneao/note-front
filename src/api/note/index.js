@@ -9,6 +9,8 @@ const NoteApi = {
     //删除小记
     deleteNote:(obj) => del(`/note/deleteNote`,obj),
     //新增笔记
-    addNote:() => get(`/note/addNote`)
+    addNote:() => get(`/note/addNote`),
+    //获取单个笔记
+    getOneNote:(noteId) => get(`/note/getOneNote?noteId=${noteId}`)
 }
 export default NoteApi;

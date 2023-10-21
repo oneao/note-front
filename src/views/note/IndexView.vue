@@ -53,6 +53,7 @@ const loading = ref(true)//是否加载骨架屏
 
 //=========================================动画显示BEGIN============================================
 import gsap from "gsap";
+
 let enterDelay = true//显示小记卡片是否需要延迟动画
 let hiddenAnimation = true//隐藏小记卡片是否需要动画
 const beforeEnter = (el) => {
@@ -137,7 +138,7 @@ const contextMenu = ref({
     ]
   })
 })//右键菜单对象
-const showContextMenu = (e, noteId, isTop, noteTitle,isCreateNew) => {
+const showContextMenu = (e, noteId, isTop, noteTitle, isCreateNew) => {
   e.preventDefault();
   contextMenu.value.show = false;
   nextTick().then(() => {
@@ -153,11 +154,11 @@ const showContextMenu = (e, noteId, isTop, noteTitle,isCreateNew) => {
 const clickContextMenuOutside = () => {
   contextMenu.value.show = false
 }
-const handleSelect =(key) =>{
+const handleSelect = (key) => {
   contextMenu.value.show = false
-  if (key === 'top' || key === 'cancelTop'){
+  if (key === 'top' || key === 'cancelTop') {
     updateNoteTopStatus();
-  }else if (key === 'deleteNote'){
+  } else if (key === 'deleteNote') {
     deleteDialogShow.value = true;
   }
 }
@@ -168,14 +169,14 @@ const updateNoteTopStatus = () => {
   loadingBar.start()
   //修改置顶状态
   const obj = {
-    noteId:contextMenu.value.noteId,
-    status:contextMenu.value.isTop ? 1 : 0
+    noteId: contextMenu.value.noteId,
+    status: contextMenu.value.isTop ? 1 : 0
   }
   NoteApi.changeNoteTopStatus(obj).then(res => {
     console.log(res)
-    if(res.data.code === 60010){
+    if (res.data.code === 60010) {
       loadingBar.finish()
-      getNoteInfo(false,false)//重新获取列表
+      getNoteInfo(false, false)//重新获取列表
     }
   }).catch(err => {
     loadingBar.error()
@@ -186,20 +187,21 @@ const updateNoteTopStatus = () => {
 
 //=========================================删除笔记BEGIN============================================
 import DelDialog from "@/components/message/DelDialog.vue";
+
 const deleteDialogShow = ref(false);//是否显示删除提醒框
-const deleteNoteLogic = (delStatus,isCreateNew) => {
+const deleteNoteLogic = (delStatus, isCreateNew) => {
   loadingBar.start()
   deleteDialogShow.value = false;//关闭删除提醒框
   const obj = {
-    noteId:contextMenu.value.noteId,
-    deleteType:delStatus,
-    isCreateNew:isCreateNew
+    noteId: contextMenu.value.noteId,
+    deleteType: delStatus,
+    isCreateNew: isCreateNew
   }
   NoteApi.deleteNote(obj).then(res => {
-    if (res.data.code === 60011){
+    if (res.data.code === 60011) {
       message.success(res.data.message)
-      getNoteInfo(false,true)
-    }else{
+      getNoteInfo(false, true)
+    } else {
       message.error(res.data.message)
     }
     loadingBar.finish()
@@ -215,12 +217,13 @@ let defaultTitle = '暂未设置标题'
 const addNote = () => {
   loadingBar.start()
   NoteApi.addNote().then(res => {
-    if (res.data.code === 60013){
+    if (res.data.code === 60013) {
       //新增成功
       message.success(res.data.message)
-      getNoteInfo(false,false)
+      goToEditNote(res.data.data)//跳转到编辑页
+      getNoteInfo(false, false)//获取笔记列表
       loadingBar.finish();
-    }else{
+    } else {
       message.success(res.data.message)
       loadingBar.error()
     }
@@ -230,6 +233,58 @@ const addNote = () => {
   })
 }
 //=========================================新增笔记END============================================
+
+//=========================================跳转编辑页面BEGIN============================================
+import {useRouter} from "vue-router";
+import VerifyNoteLockPassword from "@/components/message/VerifyNoteLockPassword.vue";
+
+const router = useRouter();
+const noteIdValue = ref('') //记录当前笔记的noteId
+const goToEditNote = (noteId,isLock) => {
+  if (isLock && noteId){
+    showVerify.value = true
+    noteIdValue.value = noteId
+  }else if (noteId){
+    router.push('/note/edit/' + noteId)
+  }
+}
+//=========================================跳转编辑页面END============================================
+
+//=========================================显示解锁笔记密码框BEGIN============================================
+import md5 from 'js-md5'
+const showVerify = ref(false) //是否显示
+const cancelShowVerify = () => {
+  showVerify.value = false
+}//取消显示
+const clickLockShowModal = (e) => {
+  showVerify.value = e
+}//点击图标显示
+const getVerifyNotePassword = (lockPassword) => {
+  loadingBar.start()
+  const obj = {
+    noteId:noteIdValue.value,
+    lockPassword:md5(lockPassword)
+  }
+  console.log(obj)
+  NoteApi.verifyNoteLockPassword(obj).then(res => {
+    if (res.data.code === 60008){
+      loadingBar.finish()
+      cancelShowVerify() //关闭并清空输入的值
+      message.success(res.data.message)
+      router.push('/note/edit/' + obj.noteId)
+    }else if (res.data.code === 60009){
+      message.error(res.data.message)
+      loadingBar.error()
+    }else{
+      console.log('未知响应码')
+      loadingBar.error()
+    }
+  }).catch(err => {
+    console.log(err)
+    loadingBar.error()
+  })
+}
+//=========================================显示解锁笔记密码框END============================================
 </script>
 
 <template>
@@ -276,10 +331,14 @@ const addNote = () => {
               <n-list-item v-for="(note,index) in noteList" :key="note.id"
                            :data-index="index"
                            @contextmenu="showContextMenu($event,note.id,!!note.isTop,note.noteTitle,note.isCreateNew)"
-                           :class="{'contexting':(contextMenu.noteId === note.id && contextMenu.show)}">
-                <NoteCard :note-id=note.id :note-title="note.noteTitle ? note.noteTitle : defaultTitle" :note-body="note.noteBody"
+                           :class="{'contexting':(contextMenu.noteId === note.id && contextMenu.show)}"
+                           @click="goToEditNote(note.id,!!note.isLock)">
+                <NoteCard :note-id=note.id :note-title="note.noteTitle ? note.noteTitle : defaultTitle"
+                          :note-body="note.noteBody"
                           :note-time="note.updateTime" :is-top="!!note.isTop" :is-lock="!!note.isLock"
-                          :note-tags="note.noteTags" />
+                          :note-tags="note.noteTags"
+                          @click-lock="clickLockShowModal"
+                ></NoteCard>
               </n-list-item>
             </template>
           </TransitionGroup>
@@ -297,6 +356,11 @@ const addNote = () => {
         </n-empty>
       </n-scrollbar>
     </n-layout-sider>
+    <!--笔记编辑容器-->
+    <n-layout-content>
+      <!--该处为子路由-->
+      <router-view/>
+    </n-layout-content>
   </n-layout>
   <!--右键下拉菜单-->
   <n-dropdown
@@ -309,14 +373,19 @@ const addNote = () => {
       :on-clickoutside="clickContextMenuOutside"
       @select="handleSelect"
   />
-  <!--删除提醒框
-      :delete-complete-btn是否显示彻底删除提醒框-->
+  <!--删除提醒框 delete-complete-btn是否显示彻底删除提醒框-->
   <DelDialog :title="contextMenu.noteTitle ? contextMenu.noteTitle : '显示失效，请联系管理员'"
              :show="deleteDialogShow"
              :is-create-new="contextMenu.isCreateNew"
              @delete="deleteNoteLogic"
              @cancel="deleteDialogShow = false"
              :delete-complete-btn="false"/>
+  <!--验证笔记密码模态框-->
+  <verify-note-lock-password
+      @cancel="cancelShowVerify"
+      @confirm="getVerifyNotePassword"
+      :show="showVerify">
+  </verify-note-lock-password>
 </template>
 <style>
 .n-layout-sider.n-layout-sider--collapsed.note-list .n-layout-toggle-button {
