@@ -5,7 +5,7 @@ import {useUserStore} from '@/stores/userStore'
 import {storeToRefs} from "pinia";
 
 //axios配置
-axios.defaults.baseURL = '/note'
+axios.defaults.baseURL = '/note-serve'
 axios.defaults.timeout = 10000;
 axios.defaults.headers.post['Content-Type'] = 'application/json;charset=UTF-8';
 //请求拦截器

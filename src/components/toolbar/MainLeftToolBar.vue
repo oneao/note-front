@@ -64,7 +64,7 @@ const mainMenus = [
     label: '笔记',
     icon: NoteAltOutlined,
     icon_size: 24,
-    to: ''
+    to: '/note'
   },
   {
     label: '收藏',
@@ -115,7 +115,7 @@ watch(() => router.currentRoute.value,
       <template #trigger>
         <n-button
             style="width: 34px;padding: 0"
-            :text="routerPath !== item.to"
+            :quaternary="routerPath !== item.to"
             :type="routerPath === item.to ? 'primary' : 'default'"
             :tertiary="routerPath === item.to"
             @click="router.push(item.to)">

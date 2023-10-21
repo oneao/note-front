@@ -33,15 +33,15 @@ export default defineConfig({
     },
     server : {
         proxy : {
-            '/note' : {
+            '/note-serve' : {
                 target : 'http://127.0.0.1:8080/note',
                 changeOrigin:true,
-                rewrite:path => path.replace(/^\/note/,'')
+                rewrite:path => path.replace(/^\/note-serve/,'')
             },
             "/img" : {
                 target : 'http://127.0.0.1:8080/note',
                 changeOrigin:true,
-                rewrite:path => path.replace(/^\/note/,'')
+                rewrite:path => path.replace(/^\/note-serve/,'')
             }
         }
     }

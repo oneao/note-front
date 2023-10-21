@@ -220,16 +220,17 @@ import DelDialog from '@/components/message/DelDialog.vue'
 const deleteDialogObj = ref({
   show: false,//是否显示
   smallNoteId: null,//小记id
-  desc: null//小记描述
+  title: null//删除的文件名称
 })
 //声明获取删除的信息
 const deleteDialog = (id, title) => {
   deleteDialogObj.value.show = true;
   deleteDialogObj.value.smallNoteId = id;
-  deleteDialogObj.value.desc = "确定删除《" + title + "》么?";
+  deleteDialogObj.value.title = title;
 }
 //声明删除删除事件
 const delSmallNote = (delStatus) => {
+  console.log(delStatus)
   deleteDialogObj.value.show = false;//关闭提醒框
   loadingBar.start();
   //逻辑删除
@@ -444,7 +445,7 @@ const filterMethod = () => {
     </n-card>
   </n-layout>
   <!--删除小记提示框-->
-  <DelDialog :describe="deleteDialogObj.desc ? deleteDialogObj.desc : '显示失效，请联系管理员'"
+  <DelDialog :title="deleteDialogObj.title ? deleteDialogObj.title : '显示失效，请联系管理员'"
              :show="deleteDialogObj.show"
              @delete="delSmallNote"
              @cancel="deleteDialogObj.show = false"
