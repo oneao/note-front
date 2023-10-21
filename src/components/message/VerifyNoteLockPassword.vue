@@ -2,7 +2,7 @@
 const props = defineProps({
   show:{type:Boolean,default:false}
 })
-const emits = defineEmits(['confirm','cancel'])
+const emits = defineEmits(['confirm','cancel','thoroughConfirm'])
 import {LockOutlined} from "@vicons/material";
 const verifyTheUnlockPasswordRef = ref(null)  //验证
 const verifyTheUnlockPasswordForm = ref({
@@ -15,13 +15,22 @@ const verifyTheUnlockPasswordRules = {
     trigger: "blur"
   }
 }//验证笔记密码表单
-const verifyTheUnlockPasswordMethod = () => {
+const verifyTheUnlockPasswordMethod1 = () => {
   verifyTheUnlockPasswordRef.value?.validate((errors) => {
     if(!errors){
       emits('confirm',verifyTheUnlockPasswordForm.value.lockPassword)
+      verifyTheUnlockPasswordForm.value.lockPassword = ''
     }
   })
-}//验证笔记密码的方法
+}//普通解锁
+const verifyTheUnlockPasswordMethod2 = () => {
+  verifyTheUnlockPasswordRef.value?.validate((errors) => {
+    if(!errors){
+      emits('thoroughConfirm',verifyTheUnlockPasswordForm.value.lockPassword)
+      verifyTheUnlockPasswordForm.value.lockPassword = ''
+    }
+  })
+}//彻底解锁
 const cancelMethod = () => {
   verifyTheUnlockPasswordForm.value.lockPassword = ''
   emits('cancel')
@@ -50,7 +59,7 @@ const cancelMethod = () => {
       <template #action>
         <n-grid cols="2" :x-gap="12" style="margin-top: -30px">
           <n-gi>
-            <n-button @click="verifyTheUnlockPasswordMethod" block type="success"  ghost>
+            <n-button @click="verifyTheUnlockPasswordMethod1" block type="success"  ghost>
               解锁
             </n-button>
           </n-gi>
@@ -60,6 +69,9 @@ const cancelMethod = () => {
             </n-button>
           </n-gi>
         </n-grid>
+        <n-button @click="verifyTheUnlockPasswordMethod2" block type="error" style="width: 100%;margin-top: 10px" ghost>
+          彻底解锁(注:密码将会清空)
+        </n-button>
       </template>
     </n-card>
   </n-modal>

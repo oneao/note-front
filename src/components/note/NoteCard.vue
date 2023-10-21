@@ -26,7 +26,7 @@ const tagColor = () => {
   return fontCss[randomIndex];
 };//随机产生标签的颜色
 
-const emits = defineEmits(['clickLock'])
+const emits = defineEmits(['clickLock','clickAddLock'])
 </script>
 
 <template>
@@ -39,7 +39,7 @@ const emits = defineEmits(['clickLock'])
     <template #header-extra>
       <n-button text :type="isLock ? 'error' : 'primary'">
         <n-icon v-if="isLock" @click="emits('clickLock',true)" :size="20" :component="LockOutlined"/>
-        <n-icon v-else :size="20" :component="LockOpenFilled"/>
+        <n-icon v-else :size="20" @click="emits('clickAddLock',true)" :component="LockOpenFilled"/>
       </n-button>
     </template>
     <template #description>

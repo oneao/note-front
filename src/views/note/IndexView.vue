@@ -1,4 +1,5 @@
 <script setup>
+//TODO:对笔记加锁，解锁的小bug
 import NoteCard from '@/components/note/NoteCard.vue'
 import {h, ref, onMounted, computed} from 'vue'
 import {
@@ -236,15 +237,14 @@ const addNote = () => {
 
 //=========================================跳转编辑页面BEGIN============================================
 import {useRouter} from "vue-router";
-import VerifyNoteLockPassword from "@/components/message/VerifyNoteLockPassword.vue";
 
 const router = useRouter();
 const noteIdValue = ref('') //记录当前笔记的noteId
-const goToEditNote = (noteId,isLock) => {
-  if (isLock && noteId){
+const goToEditNote = (noteId, isLock) => {
+  noteIdValue.value = noteId
+  if (isLock && noteId) {
     showVerify.value = true
-    noteIdValue.value = noteId
-  }else if (noteId){
+  } else if (noteId) {
     router.push('/note/edit/' + noteId)
   }
 }
@@ -252,6 +252,8 @@ const goToEditNote = (noteId,isLock) => {
 
 //=========================================显示解锁笔记密码框BEGIN============================================
 import md5 from 'js-md5'
+import VerifyNoteLockPassword from "@/components/message/VerifyNoteLockPassword.vue";
+
 const showVerify = ref(false) //是否显示
 const cancelShowVerify = () => {
   showVerify.value = false
@@ -262,20 +264,45 @@ const clickLockShowModal = (e) => {
 const getVerifyNotePassword = (lockPassword) => {
   loadingBar.start()
   const obj = {
-    noteId:noteIdValue.value,
-    lockPassword:md5(lockPassword)
+    noteId: noteIdValue.value,
+    lockPassword: md5(lockPassword)
   }
   console.log(obj)
   NoteApi.verifyNoteLockPassword(obj).then(res => {
-    if (res.data.code === 60008){
+    if (res.data.code === 60008) {
       loadingBar.finish()
       cancelShowVerify() //关闭并清空输入的值
       message.success(res.data.message)
       router.push('/note/edit/' + obj.noteId)
-    }else if (res.data.code === 60009){
+    } else if (res.data.code === 60009) {
       message.error(res.data.message)
       loadingBar.error()
-    }else{
+    } else {
+      console.log('未知响应码')
+      loadingBar.error()
+    }
+  }).catch(err => {
+    console.log(err)
+    loadingBar.error()
+  })
+} //验证笔记密码的api
+const getThoroughNotePassword = (lockPassword) => {
+  loadingBar.start()
+  const obj = {
+    noteId: noteIdValue.value,
+    lockPassword: md5(lockPassword)
+  }
+  console.log(obj)
+  NoteApi.completelyLiftedNoteLockPassword(obj).then(res => {
+    if (res.data.code === 60015) {
+      loadingBar.finish()
+      cancelShowVerify() //关闭并清空输入的值
+      message.success(res.data.message)
+      getNoteInfo(false,false)
+    } else if (res.data.code === 60009) {
+      message.error(res.data.message)
+      loadingBar.error()
+    } else {
       console.log('未知响应码')
       loadingBar.error()
     }
@@ -285,6 +312,38 @@ const getVerifyNotePassword = (lockPassword) => {
   })
 }
 //=========================================显示解锁笔记密码框END============================================
+
+//=========================================显示加锁笔记密码框BEGIN============================================
+import AddNoteLockPassword from "@/components/message/AddNoteLockPassword.vue";
+
+const showAddNoteLockModal = ref(false)
+const cancelShowAddNoteLocalModal = () => {
+  showAddNoteLockModal.value = false
+}
+const clickAddLockShowModal = (e) => {
+  showAddNoteLockModal.value = e
+}//点击图标显示
+const getAddNoteLockPassword = (notePassword) => {
+  loadingBar.start()
+  const obj = {
+    noteId: noteIdValue.value,
+    lockPassword: md5(notePassword)
+  }
+  NoteApi.addNoteLockPassword(obj).then(res => {
+    if (res.data.code === 60014){
+      showAddNoteLockModal.value = false
+      loadingBar.finish()
+      message.success(res.data.message)
+      getNoteInfo(false,false)
+    }else{
+      loadingBar.error()
+    }
+  }).catch(err => {
+    loadingBar.error()
+    console.log(err)
+  })
+}//给笔记添加密码API
+//=========================================显示加锁笔记密码框END============================================
 </script>
 
 <template>
@@ -338,6 +397,7 @@ const getVerifyNotePassword = (lockPassword) => {
                           :note-time="note.updateTime" :is-top="!!note.isTop" :is-lock="!!note.isLock"
                           :note-tags="note.noteTags"
                           @click-lock="clickLockShowModal"
+                          @click-add-lock="clickAddLockShowModal"
                 ></NoteCard>
               </n-list-item>
             </template>
@@ -384,8 +444,14 @@ const getVerifyNotePassword = (lockPassword) => {
   <verify-note-lock-password
       @cancel="cancelShowVerify"
       @confirm="getVerifyNotePassword"
+      @thoroughConfirm="getThoroughNotePassword"
       :show="showVerify">
   </verify-note-lock-password>
+  <!--添加笔记密码模态框-->
+  <add-note-lock-password
+      :show="showAddNoteLockModal"
+      @cancel="cancelShowAddNoteLocalModal"
+      @confirm="getAddNoteLockPassword"></add-note-lock-password>
 </template>
 <style>
 .n-layout-sider.n-layout-sider--collapsed.note-list .n-layout-toggle-button {
