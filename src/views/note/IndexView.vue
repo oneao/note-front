@@ -1,5 +1,4 @@
 <script setup>
-//TODO:对笔记加锁，解锁的小bug
 import NoteCard from '@/components/note/NoteCard.vue'
 import {h, ref, onMounted, computed} from 'vue'
 import {
@@ -38,7 +37,6 @@ const getNoteInfo = (ed, ha) => {
   loadingBar.start();
   NoteApi.getNoteInfo().then(res => {
     if (res.data.code === 200) {
-      console.log(res)
       //请求成功
       noteList.value = res.data.data
       loadingBar.finish()
@@ -344,6 +342,12 @@ const getAddNoteLockPassword = (notePassword) => {
   })
 }//给笔记添加密码API
 //=========================================显示加锁笔记密码框END============================================
+router.beforeEach((to, from, next) => {
+  if (from.fullPath && from.fullPath.startsWith('/note/edit')) {
+    getNoteInfo(false,true)
+  }
+  next();
+});
 </script>
 
 <template>
@@ -360,7 +364,7 @@ const getAddNoteLockPassword = (notePassword) => {
       <!--滚动条-->
       <n-scrollbar>
         <!--标题区域:包括笔记列表标题和新增笔记按钮 -->
-        <n-card :bordered="false" style="position: sticky;top: 0;z-index: 1">
+        <n-card :bordered="false" style="position: sticky;top: 0;z-index: 1;width: calc(100% - 1px)">
           <template #action>
             <n-space align="center" justify="space-between">
               <h3 style="margin: 0">笔记列表</h3>
@@ -417,7 +421,7 @@ const getAddNoteLockPassword = (notePassword) => {
       </n-scrollbar>
     </n-layout-sider>
     <!--笔记编辑容器-->
-    <n-layout-content>
+    <n-layout-content embedded content-style="padding:20px">
       <!--该处为子路由-->
       <router-view/>
     </n-layout-content>

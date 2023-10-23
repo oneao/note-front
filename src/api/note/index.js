@@ -15,7 +15,10 @@ const NoteApi = {
     //新增笔记
     addNote:() => get(`/note/addNote`),
     //获取单个笔记
-    getOneNote:(noteId) => get(`/note/getOneNote?noteId=${noteId}`),
-
+    getOneNote:(noteId) => get(`/note/getOneNote/${noteId}`),
+    //检查该笔记是否上锁,上锁的话就删除redis中的值
+    removeAccessToNote:(noteId) => get(`/note/removeAccessToNote/${noteId}`),
+    //修改笔记的内容
+    updateNoteContent:(obj) => put(`/note/updateNoteContent`,obj)
 }
 export default NoteApi;

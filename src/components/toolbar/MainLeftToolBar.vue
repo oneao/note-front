@@ -92,6 +92,10 @@ watch(() => router.currentRoute.value,
       routerPath.value = newData.path
     }
 )
+const isHighlightMenu = (toRouterPath) => {
+  if (!toRouterPath) return false;
+  return routerPath.value.startsWith(toRouterPath)
+}
 </script>
 
 <template>
@@ -115,9 +119,9 @@ watch(() => router.currentRoute.value,
       <template #trigger>
         <n-button
             style="width: 34px;padding: 0"
-            :quaternary="routerPath !== item.to"
-            :type="routerPath === item.to ? 'primary' : 'default'"
-            :tertiary="routerPath === item.to"
+            :quaternary="!isHighlightMenu(item.to)"
+            :type="isHighlightMenu(item.to) ? 'primary' : 'default'"
+            :tertiary="isHighlightMenu(item.to)"
             @click="router.push(item.to)">
           <n-icon :size="item.icon_size" :component="item.icon"/>
         </n-button>

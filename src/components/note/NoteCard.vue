@@ -1,6 +1,6 @@
 <script setup>
+import {watch} from "vue";
 import {LockOutlined, LockOpenFilled} from '@vicons/material'
-import {htmlToText} from "html-to-text";
 
 const noteProps = defineProps({
   noteId: {type: Number, required: true},
@@ -27,6 +27,7 @@ const tagColor = () => {
 };//随机产生标签的颜色
 
 const emits = defineEmits(['clickLock','clickAddLock'])
+
 </script>
 
 <template>
@@ -45,7 +46,7 @@ const emits = defineEmits(['clickLock','clickAddLock'])
     <template #description>
       <n-ellipsis line-clamp="2" :tooltip="false">
         <n-text v-if="null === noteBody" depth="3">暂无内容</n-text>
-        <n-text v-else depth="3">{{ htmlToText(noteBody) }}</n-text>
+        <n-text v-else depth="3">{{ noteBody }}</n-text>
       </n-ellipsis>
     </template>
     <template #default>
