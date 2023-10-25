@@ -25,6 +25,7 @@
     "wangeditor5-for-vue3": "^1.0.0"
   },
   "devDependencies": {
+    "@vicons/antd": "^0.12.0",
     "@vicons/material": "^0.12.0",
     "@vitejs/plugin-vue": "^3.0.1",
     "js-md5": "^0.8.3",

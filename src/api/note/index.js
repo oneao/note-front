@@ -4,7 +4,7 @@ const NoteApi = {
     getNoteInfo:() => get(`/note/getNoteInfo`),
     //验证用户笔记密码是否正确
     verifyNoteLockPassword:(obj) => post(`/note/verifyNoteLockPassword`,obj),
-    //彻底解除笔记密码
+    //彻底删除笔记密码
     completelyLiftedNoteLockPassword:(obj) => put(`/note/completelyLiftedNoteLockPassword`,obj),
     //添加用户笔记密码
     addNoteLockPassword:(obj) => post(`/note/addNoteLockPassword`,obj),
@@ -16,9 +16,19 @@ const NoteApi = {
     addNote:() => get(`/note/addNote`),
     //获取单个笔记
     getOneNote:(noteId) => get(`/note/getOneNote/${noteId}`),
-    //检查该笔记是否上锁,上锁的话就删除redis中的值
-    removeAccessToNote:(noteId) => get(`/note/removeAccessToNote/${noteId}`),
     //修改笔记的内容
-    updateNoteContent:(obj) => put(`/note/updateNoteContent`,obj)
+    updateNoteContent:(obj) => put(`/note/updateNoteContent`,obj),
+    //收藏笔记
+    updateNoteCollection:(obj) => put(`/note/updateNoteCollection`,obj),
+    //判断分享的笔记是否已经分享过了
+    getNoteIsShare:(noteId) => get(`/noteShare/getNoteIsShare?noteId=${noteId}`),
+    //获取分享笔记（这个接口只有ShareNoteLayout页面使用）
+    getShareNote:(obj) => post(`/noteShare/getShareNote`,obj),
+    //保存分享笔记的内容
+    addNoteShare:(obj) => post(`/noteShare/addNoteShare`,obj),
+    //判断分享的笔记是否需要锁
+    getShareNoteIsLock:(n_sid) => get(`/noteShare/getShareNoteIsLock?n_sid=${n_sid}`),
+    //点赞或取消点赞
+    goToLick:(obj) => put(`/noteShare/goToLick`,obj)
 }
 export default NoteApi;

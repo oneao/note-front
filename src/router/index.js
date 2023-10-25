@@ -8,13 +8,17 @@ const routes = [
     {
         path: '/note',//笔记
         component: () => import("@/views/note/IndexView.vue"),
-        children:[
+        children: [
             {
-                path:'edit/:noteId',//路由属性传值
-                props:true,//路由属性传值
-                component:() => import("@/views/note/EditNote.vue")
+                path: 'edit/:noteId',//路由属性传值
+                props: true,//路由属性传值
+                component: () => import("@/views/note/EditNote.vue")
             }
         ]
+    },
+    {
+        path: '/noteShare',
+        component:() => import('@/views/note/ShareNoteLayout.vue')
     }
 ]
 const router = createRouter({

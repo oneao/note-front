@@ -130,9 +130,6 @@ const addSmallNote = () => {
 const getOneSmallNote = () => {
   SmallNoteApi.getOneSmallNote(formObj.value.smallNoteId).then(res => {
     if(res.data.code === 200){
-      console.log(res)
-      console.log(new Date(res.data.data.beginTime).getTime())
-      console.log(new Date(res.data.data.endTime).getTime())
       formObj.value.smallNoteTitle = res.data.data.smallNoteTitle
       formObj.value.smallNoteTags = res.data.data.smallNoteTags.split(',')
       formObj.value.smallNoteEvents = JSON.parse(res.data.data.smallNoteEvents)

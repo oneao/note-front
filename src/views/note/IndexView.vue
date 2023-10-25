@@ -106,7 +106,7 @@ const contextMenu = ref({
   noteId: null,//笔记的id
   noteTitle: '',//笔记的标题
   isTop: false,//是否置顶
-  isCreateNew: 0,//是否新建
+  isNewBuild: 0,//是否新建
   x: 0,
   y: 0,
   show: false, //是否显示右键菜单
@@ -137,14 +137,14 @@ const contextMenu = ref({
     ]
   })
 })//右键菜单对象
-const showContextMenu = (e, noteId, isTop, noteTitle, isCreateNew) => {
+const showContextMenu = (e, noteId, isTop, noteTitle, isNewBuild) => {
   e.preventDefault();
   contextMenu.value.show = false;
   nextTick().then(() => {
     contextMenu.value.show = true;
     contextMenu.value.noteId = noteId;
     contextMenu.value.isTop = isTop;
-    contextMenu.value.isCreateNew = isCreateNew;
+    contextMenu.value.isNewBuild = isNewBuild;
     contextMenu.value.noteTitle = noteTitle ? noteTitle : defaultTitle;
     contextMenu.value.x = e.clientX;
     contextMenu.value.y = e.clientY;
@@ -188,13 +188,13 @@ const updateNoteTopStatus = () => {
 import DelDialog from "@/components/message/DelDialog.vue";
 
 const deleteDialogShow = ref(false);//是否显示删除提醒框
-const deleteNoteLogic = (delStatus, isCreateNew) => {
+const deleteNoteLogic = (delStatus, isNewBuild) => {
   loadingBar.start()
   deleteDialogShow.value = false;//关闭删除提醒框
   const obj = {
     noteId: contextMenu.value.noteId,
     deleteType: delStatus,
-    isCreateNew: isCreateNew
+    isNewBuild: isNewBuild
   }
   NoteApi.deleteNote(obj).then(res => {
     if (res.data.code === 60011) {
@@ -219,8 +219,8 @@ const addNote = () => {
     if (res.data.code === 60013) {
       //新增成功
       message.success(res.data.message)
-      goToEditNote(res.data.data)//跳转到编辑页
       getNoteInfo(false, false)//获取笔记列表
+      goToEditNote(res.data.data,false)//跳转到编辑页
       loadingBar.finish();
     } else {
       message.success(res.data.message)
@@ -393,7 +393,7 @@ router.beforeEach((to, from, next) => {
             <template v-if="!loading && noteList.length > 0">
               <n-list-item v-for="(note,index) in noteList" :key="note.id"
                            :data-index="index"
-                           @contextmenu="showContextMenu($event,note.id,!!note.isTop,note.noteTitle,note.isCreateNew)"
+                           @contextmenu="showContextMenu($event,note.id,!!note.isTop,note.noteTitle,note.isNewBuild)"
                            :class="{'contexting':(contextMenu.noteId === note.id && contextMenu.show)}"
                            @click="goToEditNote(note.id,!!note.isLock)">
                 <NoteCard :note-id=note.id :note-title="note.noteTitle ? note.noteTitle : defaultTitle"
@@ -440,7 +440,7 @@ router.beforeEach((to, from, next) => {
   <!--删除提醒框 delete-complete-btn是否显示彻底删除提醒框-->
   <DelDialog :title="contextMenu.noteTitle ? contextMenu.noteTitle : '显示失效，请联系管理员'"
              :show="deleteDialogShow"
-             :is-create-new="contextMenu.isCreateNew"
+             :is-new-build="contextMenu.isNewBuild"
              @delete="deleteNoteLogic"
              @cancel="deleteDialogShow = false"
              :delete-complete-btn="false"/>

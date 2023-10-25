@@ -38,11 +38,26 @@ const changeLoginStatusDialog = () => {
     })
   }
 }
+import {useRouter} from "vue-router";
+
+const router = useRouter();
+//全局前置路由守卫————初始化的时候被调用、每次路由切换之前被调用
+router.beforeEach((to, from, next) => {
+  //如果路由需要跳转
+  if (to.fullPath.startsWith('/noteShare')){
+    show.value = false
+  }else{
+    show.value = true
+  }
+  next()
+})
+const show = ref(true)
+import ShareNoteLayout from "@/views/note/ShareNoteLayout.vue";
 </script>
 
 <template>
   <!-- 页面布局 -->
-  <n-layout position="absolute">
+  <n-layout v-if="show" position="absolute">
     <!--头部-->
     <n-layout-header bordered style="height:64px;padding: 0 20px;">
       <MainTopToolBar/>
@@ -57,6 +72,7 @@ const changeLoginStatusDialog = () => {
       <router-view/>
     </n-layout>
   </n-layout>
+  <share-note-layout v-else/>
   <!-- 登录模态框 -->
   <show-modal/>
 </template>

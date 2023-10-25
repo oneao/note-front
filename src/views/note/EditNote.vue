@@ -1,18 +1,29 @@
 <script setup>
 //=========================================公共操作BEGIN============================================
-import {onBeforeUnmount, ref, shallowRef, onMounted, shallowReactive} from 'vue';
-import {useMessage} from 'naive-ui' //消息
+import {onBeforeUnmount, ref, shallowRef, onMounted, shallowReactive, h} from 'vue';
+import {NSpace, NText, useMessage} from 'naive-ui' //消息
 const message = useMessage()
 import {useLoadingBar} from 'naive-ui'//加载条
 const loadingBar = useLoadingBar()
 import {useRouter} from "vue-router";//路由
 const router = useRouter();
-import {FiberManualRecordRound, StarBorderRound, MoreHorizRound, LockOpenFilled, LockOutlined} from '@vicons/material'//图标
+import {
+  FiberManualRecordRound,
+  StarBorderRound,
+  MoreHorizRound,
+  StarRound,
+  LockOpenFilled,
+  LockOutlined, AddBoxRound, DeleteForeverFilled
+} from '@vicons/material'//图标
+import {
+  ShareAltOutlined
+} from '@vicons/antd'
 import NoteApi from '@/api/note/index'//引入笔记Api
 const props = defineProps({
   noteId: {type: String, required: true}
 })//自定义属性
 onMounted(() => {
+  showEditor.value = false
   window.addEventListener('beforeunload', refreshThePageMethod);
 })
 const refreshThePageMethod = () => {
@@ -28,13 +39,20 @@ const getOneNoteInfo = () => {
     if (res.data.code === 200) {
       //获取成功
       note.value = res.data.data
+      shareFormValue.value.shareTitle = note.value.noteTitle
+      shareFormValue.value.shareTags = note.value.noteTags === null ? [] : note.value.noteTags.split(',')
       loadingBar.finish()
       setTimeout(() => {
         if (note.value.noteContent !== null && note.value.noteContent !== '') {
           showEditor.value = true
           valueHtml.value = note.value.noteContent
+        }else{
+          showEditor.value = true
+          valueHtml.value = ''
         }
       }, 100)
+      showEditor.value = true
+      loadingBar.finish()
     } else if (res.data.code === 60016) {
       //不能直接访问
       message.error(res.data.message)
@@ -56,15 +74,14 @@ watch(() => props.noteId,
 const updateNoteContentMethod = (noteId, obj) => {
   loadingBar.start()
   if (obj.html === note.value.noteContent) { //如果没有变化，则不更新。
+    loadingBar.finish()
     return;
   }
-  console.log('1111')
   const updateObj = {
     noteId: noteId,
     noteBody: obj.text.replace(/\s+/g, ' ').trim().substring(0, 40),
-    noteContent: obj.html
+    noteContent: obj.html,
   }
-  console.log(updateObj)
   NoteApi.updateNoteContent(updateObj).then(res => {
     if (res.data.code === 60017) {
       //自動保存成功
@@ -96,7 +113,6 @@ const getVerifyNotePassword = (lockPassword) => {
     noteId: props.noteId,
     lockPassword: md5(lockPassword)
   }
-  console.log(obj)
   NoteApi.verifyNoteLockPassword(obj).then(res => {
     if (res.data.code === 60008) {
       loadingBar.finish()
@@ -147,6 +163,7 @@ const getThoroughNotePassword = (lockPassword) => {
 const showEditor = ref(true)
 import '@wangeditor/editor/dist/css/style.css';
 import {Editor, Toolbar} from '@wangeditor/editor-for-vue'
+import {disabledBtn} from "@/utils/disabledBtn";
 
 // 编辑器实例，必须用 shallowRef ，重要！
 const editorRef = shallowRef()
@@ -269,6 +286,159 @@ const getContent = () => {
   }
 }
 //=========================================文档编辑器END============================================
+
+//=========================================收藏笔记BEGIN============================================
+const toCollection = () => {
+  note.value.isCollection = note.value.isCollection === 0 ? 1 : 0;
+  loadingBar.start()
+  const obj = {
+    noteId: note.value.id,
+    isCollection: note.value.isCollection
+  }
+  NoteApi.updateNoteCollection(obj).then(res => {
+    if (res.data.code === 60018 || res.data.code === 60019) {
+      message.success(res.data.message)
+      loadingBar.finish()
+    } else {
+      loadingBar.error()
+    }
+  }).catch(err => {
+    console.log(err)
+    loadingBar.error()
+  })
+}
+
+//=========================================收藏笔记END============================================
+
+//=========================================分享笔记END============================================
+import {useNotification} from 'naive-ui'//通知框
+const notification = useNotification()
+
+const shareFormRef = ref();
+const shareFormValue = ref({
+  shareTitle: '',
+  shareTags: [],
+  shareTime: '',
+  isNeedPass: false,
+  sharePass: '',
+  shareRemark: '',
+})
+const shareFromRules = {
+  shareTitle: {
+    required: true,
+    message: '请输入笔记标题'
+  },
+  shareTags: {
+    required: true,
+    message: '请添加标签'
+  },
+  shareTime: {
+    required: true,
+    message: '请选择分享日期',
+  }
+}
+const shareOptions = [
+  {
+    label: "7天",
+    value: "7"
+  },
+  {
+    label: "30天",
+    value: "30"
+  },
+  {
+    label: "1年",
+    value: "365"
+  },
+  {
+    label: '永久',
+    value: '-1'
+  }
+]
+const saveShareMessage = () => {
+  shareFormRef.value?.validate((errors) => {
+    if (!errors) {
+      loadingBar.start();
+      const obj = {
+        noteId: props.noteId,
+        noteShareTime: shareFormValue.value.shareTime,
+        noteShareTitle: shareFormValue.value.shareTitle,
+        noteShareTags: shareFormValue.value.shareTags.toString(),
+        noteShareRemark: shareFormValue.value.shareRemark,
+        isNeedPassword: shareFormValue.value.isNeedPass === true ? 1 : 0,
+        noteSharePassword: shareFormValue.value.sharePass
+      }
+      NoteApi.addNoteShare(obj).then(res => {
+        if (res.data.code === 60020 || res.data.code === 60021) {
+          notification.info({
+            title: res.data.message,
+            content:res.data.data,
+          })
+          cancelShareModal()
+        } else {
+          //分享失败
+          loadingBar.error()
+        }
+        loadingBar.finish()
+      }).catch(err => {
+        console.log(err)
+        loadingBar.error()
+      })
+    } else {
+      const errorsMessage = [].concat(...errors)
+      // 显示错误的通知
+      notification.error({
+        title: '编辑小记保存提醒',
+        content: () =>
+            h(NSpace, {vertical: true}, {
+              default: () =>
+                  errorsMessage.map((item, index) =>
+                      h(NText, {type: 'error'}, {
+                        default: () => `${index + 1}：${item.message}`,
+                      })
+                  ),
+            }),
+        duration: 5000,
+      })
+    }
+  })
+}
+const showShareModal = ref(false)
+const toShowShareModal = () => {
+  loadingBar.start()
+  NoteApi.getNoteIsShare(note.value.id).then(res => {
+    if (res.data.code === 60029){
+      updateNoteContentMethod(props.noteId, getContent());
+      notification.info({
+        title: res.data.message,
+        content:res.data.data,
+      })
+      loadingBar.error()
+    }else if (res.data.code === 60028){
+      showShareModal.value = true;
+      updateNoteContentMethod(props.noteId, getContent());
+      loadingBar.error()
+    }else{
+      console.log(res)
+      loadingBar.error()
+    }
+  }).catch(err => {
+    console.log(err)
+    loadingBar.error()
+  })
+}
+const cancelShareModal = () => {
+  showShareModal.value = false  //关闭
+  //重置
+  shareFormValue.value.shareTitle = note.value.noteTitle
+  shareFormValue.value.shareTags = note.value.noteTags === null ? [] : note.value.noteTags.split(',')
+  shareFormValue.value.shareTime = ''
+  shareFormValue.value.isNeedPass = false
+  shareFormValue.value.sharePass = ''
+  shareFormValue.value.shareRemark = ''
+}
+//=========================================分享笔记END============================================
+
 </script>
 <template>
   <!--上部显示框-->
@@ -281,15 +451,24 @@ const getContent = () => {
           <n-text depth="3">保存并发布于：{{ note.updateTime }}</n-text>
         </n-space>
         <n-space align="center" :wrap-item="false" :size="8">
-          <n-button round>分享</n-button>
           <!--收藏-->
           <n-popover trigger="hover">
             <template #trigger>
-              <n-button text circle>
-                <n-icon size="25" :component="StarBorderRound"/>
+              <n-button text circle @click="toCollection">
+                <n-icon size="25" v-if="note.isCollection === 0" :component="StarBorderRound"/>
+                <n-icon size="25" v-else :component="StarRound" color="red"/>
               </n-button>
             </template>
-            收藏
+            <n-text v-if="note.isCollection === 0">收藏</n-text>
+            <n-text v-else>取消收藏</n-text>
+          </n-popover>
+          <n-popover trigger="hover">
+            <template #trigger>
+              <n-button @click="toShowShareModal" text>
+                <n-icon :component="ShareAltOutlined" :size="22"/>
+              </n-button>
+            </template>
+            分享
           </n-popover>
           <!--更多-->
           <n-popover trigger="hover">
@@ -334,4 +513,83 @@ const getContent = () => {
       @thoroughConfirm="getThoroughNotePassword"
       :show="showVerify">
   </verify-note-lock-password>
+  <!--分享笔记框-->
+  <n-modal :show="showShareModal" transform-origin="center">
+    <n-card style="width: 460px;text-align: center">
+      <!--底部区域-->
+      <template #default>
+        <n-form ref="shareFormRef" :model="shareFormValue" :rules="shareFromRules">
+          <n-gradient-text type="info" style="font-size: 20px;margin-bottom: 5px">
+            笔记标题
+          </n-gradient-text>
+          <n-form-item :show-label="false" :show-feedback="false" path="shareTitle">
+            <!--小记标题-->
+            <n-input v-model:value="shareFormValue.shareTitle" size="large"
+                     style="width: 100%;background-color: transparent;margin-bottom: 15px"
+                     placeholder="请输入笔记标题"></n-input>
+          </n-form-item>
+          <div>
+            <n-space align="center">
+              <!--标签容器-->
+              <n-space align="center">
+                <n-form-item :show-label="false" :show-feedback="false" path="shareTags">
+                  <n-gradient-text type="warning" style="font-size: 16px;margin-right: 10px">
+                    标签:
+                  </n-gradient-text>
+                  <!--标签选择-->
+                  <n-dynamic-tags :max="5" v-model:value="shareFormValue.shareTags"></n-dynamic-tags>
+                </n-form-item>
+              </n-space>
+            </n-space>
+            <!--分割线-->
+            <n-divider/>
+            <!--代办事项-->
+            <n-form-item :show-label="false" :show-feedback="false" path="shareTime">
+              <n-text>分享天数：</n-text>
+              <n-select style="width: 330px" v-model:value="shareFormValue.shareTime" placeholder="请选择分享天数"
+                        :options="shareOptions"/>
+            </n-form-item>
+            <!--分割线-->
+            <n-divider/>
+            <!--小记备注-->
+            <n-space vertical>
+              <n-gradient-text type="warning" style="font-size: 18px;display: block">
+                笔记备注
+              </n-gradient-text>
+              <n-input
+                  type="textarea"
+                  placeholder="请输入笔记备注信息"
+                  style="width: 100%"
+                  v-model:value="shareFormValue.shareRemark"
+              />
+            </n-space>
+            <!--分割线-->
+            <n-divider/>
+            <n-space style="margin-top: 10px;margin-bottom: 10px" center>
+              <!--时间限制容器-->
+              <n-gradient-text type="warning" style="font-size: 16px;">
+                是否为这个笔记添加访问密码？
+              </n-gradient-text>
+              <n-switch :round="false" v-model:value="shareFormValue.isNeedPass"></n-switch>
+            </n-space>
+            <n-space vertical v-if="shareFormValue.isNeedPass">
+              <n-text :depth="3" type="warning">注意：密码不要随意泄露哦！</n-text>
+              <n-input v-model:value="shareFormValue.sharePass" placeholder="请输入访问密码"></n-input>
+              <!-- 起始时间 -->
+            </n-space>
+          </div>
+        </n-form>
+      </template>
+      <template #action>
+        <n-grid cols="2" :x-gap="12">
+          <n-gi>
+            <n-button block ghost type="primary" @click="saveShareMessage">保存</n-button>
+          </n-gi>
+          <n-gi>
+            <n-button block tertiary @click="cancelShareModal">取消</n-button>
+          </n-gi>
+        </n-grid>
+      </template>
+    </n-card>
+  </n-modal>
 </template>
