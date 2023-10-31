@@ -10,11 +10,12 @@ axios.defaults.timeout = 10000;
 axios.defaults.headers.post['Content-Type'] = 'application/json;charset=UTF-8';
 //请求拦截器
 axios.interceptors.request.use(function (config) {
-    console.log(config.url)
     //对特定请求路径进行拦截
     //需要拦截的路径，可以在此处对请求的路径进行拦截处理
-    if(config.url === '/user/login' || config.url === '/user/getCode' || config.url === '/user/register'){
-        //
+    if(config.url === '/user/login' || config.url === '/user/getCode' || config.url === '/user/register'
+        || config.url === '/noteShare/getShareNote' || config.url === '/noteShare/goToLick'
+        || config.url.startsWith('/noteShare/getShareNoteIsLock' || config.url.startsWith('/openai'))
+    ){
     }else{
         let token = JSON.parse(window.localStorage.getItem("user")).token;
         let userInfo = window.localStorage.getItem("user")

@@ -12,8 +12,7 @@ import {
   StarBorderRound,
   MoreHorizRound,
   StarRound,
-  LockOpenFilled,
-  LockOutlined, AddBoxRound, DeleteForeverFilled
+  SaveAsOutlined
 } from '@vicons/material'//图标
 import {
   ShareAltOutlined
@@ -24,6 +23,7 @@ const props = defineProps({
 })//自定义属性
 onMounted(() => {
   showEditor.value = false
+  getOneNoteInfo();
   window.addEventListener('beforeunload', refreshThePageMethod);
 })
 const refreshThePageMethod = () => {
@@ -62,7 +62,6 @@ const getOneNoteInfo = () => {
   })
 }
 const note = ref({})  //note对象
-getOneNoteInfo();
 
 watch(() => props.noteId,
     (newValue, oldValue) => {
@@ -71,12 +70,18 @@ watch(() => props.noteId,
       updateNoteContentMethod(oldValue, getContent());
       getOneNoteInfo();
     })//监听id值如何发生变化，那么就会重新调用请求方法。
-const updateNoteContentMethod = (noteId, obj) => {
+const  updateNoteContentMethod= (noteId, obj) => {
   loadingBar.start()
-  if (obj.html === note.value.noteContent) { //如果没有变化，则不更新。
+  if (obj === null || obj === ''){
     loadingBar.finish()
     return;
   }
+  if (typeof obj.html === 'undefined' || obj.html === note.value.noteContent) {
+    // 如果obj.html为undefined或者没有变化，则不更新
+    loadingBar.finish();
+    return;
+  }
+
   const updateObj = {
     noteId: noteId,
     noteBody: obj.text.replace(/\s+/g, ' ').trim().substring(0, 40),
@@ -287,6 +292,16 @@ const getContent = () => {
 }
 //=========================================文档编辑器END============================================
 
+//=========================================保存笔记BEGIN============================================
+const saveEditNote = () => {
+  emit('reloadLeftToolbar')
+  updateNoteContentMethod(props.noteId,getContent())
+}
+const emit = defineEmits([
+    'reloadLeftToolbar'
+])
+//=========================================保存笔记END============================================
+
 //=========================================收藏笔记BEGIN============================================
 const toCollection = () => {
   note.value.isCollection = note.value.isCollection === 0 ? 1 : 0;
@@ -451,12 +466,21 @@ const cancelShareModal = () => {
           <n-text depth="3">保存并发布于：{{ note.updateTime }}</n-text>
         </n-space>
         <n-space align="center" :wrap-item="false" :size="8">
+          <!--保存-->
+          <n-popover trigger="hover">
+            <template #trigger>
+              <n-button text circle >
+                <n-icon size="25" @click="saveEditNote" :component="SaveAsOutlined" />
+              </n-button>
+            </template>
+            保存
+          </n-popover>
           <!--收藏-->
           <n-popover trigger="hover">
             <template #trigger>
               <n-button text circle @click="toCollection">
-                <n-icon size="25" v-if="note.isCollection === 0" :component="StarBorderRound"/>
-                <n-icon size="25" v-else :component="StarRound" color="red"/>
+                <n-icon size="25" v-if="note.isCollection === 1" :component="StarRound" color="red"/>
+                <n-icon size="25"  v-else :component="StarBorderRound"/>
               </n-button>
             </template>
             <n-text v-if="note.isCollection === 0">收藏</n-text>

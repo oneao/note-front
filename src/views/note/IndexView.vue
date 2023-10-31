@@ -9,8 +9,9 @@ import {
   ArrowCircleUpRound,
   ArrowCircleDownFilled
 } from '@vicons/material'
+import {FileImageOutlined} from '@vicons/antd'
 import NoteApi from '@/api/note'
-import {useMessage} from 'naive-ui' //消息
+import {NSpace, NText, useMessage} from 'naive-ui' //消息
 const message = useMessage()
 import {useLoadingBar} from 'naive-ui'//加载条
 const loadingBar = useLoadingBar()
@@ -107,14 +108,16 @@ const contextMenu = ref({
   noteTitle: '',//笔记的标题
   isTop: false,//是否置顶
   isNewBuild: 0,//是否新建
+  noteBackgroundImage: '',
+  isLock: false,
   x: 0,
   y: 0,
   show: false, //是否显示右键菜单
   options: computed(() => {
     return [
       {
-        label: "重命名笔记",
-        key: "renameNote",
+        label: "编辑笔记信息",
+        key: "editNoteMessage",
         icon: renderIcon(DriveFileRenameOutlineOutlined)
       },
       {
@@ -137,15 +140,21 @@ const contextMenu = ref({
     ]
   })
 })//右键菜单对象
-const showContextMenu = (e, noteId, isTop, noteTitle, isNewBuild) => {
+const showContextMenu = (e, noteId, isTop, noteTitle, isNewBuild, noteBody, noteTags, noteBackgroundImage, isLock) => {
   e.preventDefault();
   contextMenu.value.show = false;
   nextTick().then(() => {
-    contextMenu.value.show = true;
-    contextMenu.value.noteId = noteId;
-    contextMenu.value.isTop = isTop;
-    contextMenu.value.isNewBuild = isNewBuild;
-    contextMenu.value.noteTitle = noteTitle ? noteTitle : defaultTitle;
+    contextMenu.value.show = true;//是否显示
+    contextMenu.value.noteId = noteId;//笔记id
+    contextMenu.value.isTop = isTop;//是否置顶
+    contextMenu.value.isNewBuild = isNewBuild;//是否新建
+    contextMenu.value.noteTitle = noteTitle ? noteTitle : defaultTitle;//笔记标题
+    contextMenu.value.noteBackgroundImage = noteBackgroundImage;//背景图片
+    contextMenu.value.isLock = isLock
+    //为编辑笔记信息表单赋值
+    editNoteMessageForm.value.noteTitle = contextMenu.value.noteTitle
+    editNoteMessageForm.value.noteBody = noteBody
+    editNoteMessageForm.value.noteTags = noteTags === null || noteTags === '' ? [] : noteTags.split(',')
     contextMenu.value.x = e.clientX;
     contextMenu.value.y = e.clientY;
   });
@@ -158,7 +167,29 @@ const handleSelect = (key) => {
   if (key === 'top' || key === 'cancelTop') {
     updateNoteTopStatus();
   } else if (key === 'deleteNote') {
-    deleteDialogShow.value = true;
+    if (contextMenu.value.isLock) {
+      showVerify.value = true
+      watch(() => rememberVerifyNoteCode.value, newData => {
+        if (newData) {
+          deleteDialogShow.value = true;
+          rememberVerifyNoteCode.value = false
+        }
+      })
+    } else {
+      deleteDialogShow.value = true;
+    }
+  } else if (key === 'editNoteMessage') {
+    if (contextMenu.value.isLock) {
+      showVerify.value = true
+      watch(() => rememberVerifyNoteCode.value, newData => {
+        if (newData) {
+          editNoteMessageModal.value = true
+          rememberVerifyNoteCode.value = false
+        }
+      })
+    } else {
+      editNoteMessageModal.value = true
+    }
   }
 }
 //=========================================右键下拉菜单END============================================
@@ -200,6 +231,7 @@ const deleteNoteLogic = (delStatus, isNewBuild) => {
     if (res.data.code === 60011) {
       message.success(res.data.message)
       getNoteInfo(false, true)
+      router.push('/note')
     } else {
       message.error(res.data.message)
     }
@@ -220,7 +252,7 @@ const addNote = () => {
       //新增成功
       message.success(res.data.message)
       getNoteInfo(false, false)//获取笔记列表
-      goToEditNote(res.data.data,false)//跳转到编辑页
+      goToEditNote(res.data.data, false)//跳转到编辑页
       loadingBar.finish();
     } else {
       message.success(res.data.message)
@@ -252,6 +284,7 @@ const goToEditNote = (noteId, isLock) => {
 import md5 from 'js-md5'
 import VerifyNoteLockPassword from "@/components/message/VerifyNoteLockPassword.vue";
 
+const rememberVerifyNoteCode = ref(false) //有锁的时候删除需要进行校验
 const showVerify = ref(false) //是否显示
 const cancelShowVerify = () => {
   showVerify.value = false
@@ -262,7 +295,7 @@ const clickLockShowModal = (e) => {
 const getVerifyNotePassword = (lockPassword) => {
   loadingBar.start()
   const obj = {
-    noteId: noteIdValue.value,
+    noteId: noteIdValue.value === null || noteIdValue.value === '' ? contextMenu.value.noteId : noteIdValue.value,
     lockPassword: md5(lockPassword)
   }
   console.log(obj)
@@ -270,6 +303,7 @@ const getVerifyNotePassword = (lockPassword) => {
     if (res.data.code === 60008) {
       loadingBar.finish()
       cancelShowVerify() //关闭并清空输入的值
+      rememberVerifyNoteCode.value = true //标记
       message.success(res.data.message)
       router.push('/note/edit/' + obj.noteId)
     } else if (res.data.code === 60009) {
@@ -296,7 +330,7 @@ const getThoroughNotePassword = (lockPassword) => {
       loadingBar.finish()
       cancelShowVerify() //关闭并清空输入的值
       message.success(res.data.message)
-      getNoteInfo(false,false)
+      getNoteInfo(false, false)
     } else if (res.data.code === 60009) {
       message.error(res.data.message)
       loadingBar.error()
@@ -313,6 +347,7 @@ const getThoroughNotePassword = (lockPassword) => {
 
 //=========================================显示加锁笔记密码框BEGIN============================================
 import AddNoteLockPassword from "@/components/message/AddNoteLockPassword.vue";
+import {disabledBtn} from "@/utils/disabledBtn";
 
 const showAddNoteLockModal = ref(false)
 const cancelShowAddNoteLocalModal = () => {
@@ -328,12 +363,12 @@ const getAddNoteLockPassword = (notePassword) => {
     lockPassword: md5(notePassword)
   }
   NoteApi.addNoteLockPassword(obj).then(res => {
-    if (res.data.code === 60014){
+    if (res.data.code === 60014) {
       showAddNoteLockModal.value = false
       loadingBar.finish()
       message.success(res.data.message)
-      getNoteInfo(false,false)
-    }else{
+      getNoteInfo(false, false)
+    } else {
       loadingBar.error()
     }
   }).catch(err => {
@@ -344,10 +379,99 @@ const getAddNoteLockPassword = (notePassword) => {
 //=========================================显示加锁笔记密码框END============================================
 router.beforeEach((to, from, next) => {
   if (from.fullPath && from.fullPath.startsWith('/note/edit')) {
-    getNoteInfo(false,true)
+    getNoteInfo(false, true)
   }
   next();
 });
+//=========================================笔记信息编辑框BEGIN============================================
+let userInfo = window.localStorage.getItem('user')
+const userId = JSON.parse(userInfo).id;
+const token = JSON.parse(userInfo).token;
+const handleFinish = ({
+                        file,
+                        event
+                      }) => {
+  console.log(event);
+  message.success((event?.target).response.data);
+  contextMenu.value.noteBackgroundImage = JSON.parse((event?.target).response).data.url
+  //const ext = file.name.split(".")[1];
+  //file.name = `更名.${ext}`;
+  //file.url = "__HTTPS__://www.mocky.io/v2/5e4bafc63100007100d8b70f";
+  return file;
+};//图片上传成功的回调函数
+import {useNotification} from 'naive-ui'//通知
+const notification = useNotification()
+const editNoteMessageModal = ref(false)
+const editNoteMessageRef = ref(null)
+const editNoteMessageForm = ref({
+  noteTitle: '',
+  noteBody: '',
+  noteTags: [],
+})
+const editNoteMessageRules = {
+  noteTitle: {
+    required: true,
+    message: "请输入标题",
+  },
+  noteBody: {
+    required: true,
+    message: "请输入笔记主题",
+  },
+  noteTags: {
+    required: true,
+    message: "请选择笔记标签",
+  }
+}
+const saveEditNoteMessage = () => {
+  editNoteMessageRef.value?.validate((errors) => {
+    if (!errors) {
+      const obj = {
+        noteId: contextMenu.value.noteId,
+        noteTitle: editNoteMessageForm.value.noteTitle,
+        noteBody: editNoteMessageForm.value.noteBody,
+        noteTags: editNoteMessageForm.value.noteTags.toString(),
+        noteBackgroundImage: contextMenu.value.noteBackgroundImage
+      }
+      NoteApi.updateNoteMessage(obj).then(res => {
+        if (res.data.code === 60017) {
+          //更新成功
+          editNoteMessageModal.value = false //关闭
+          message.success(res.data.message)
+          getNoteInfo(true, true)
+          router.push('/note/edit/' + contextMenu.value.noteId)
+        }
+      }).catch(err => {
+        console.log(err)
+      })
+      //loadingBar.start();
+    } else {
+      const errorsMessage = [].concat(...errors)
+      // 显示错误的通知
+      notification.error({
+        title: '编辑笔记保存提醒',
+        content: () =>
+            h(NSpace, {vertical: true}, {
+              default: () =>
+                  errorsMessage.map((item, index) =>
+                      h(NText, {type: 'error'}, {
+                        default: () => `${index + 1}：${item.message}`,
+                      })
+                  ),
+            }),
+        duration: 5000,
+      })
+    }
+  })
+}
+const cancelEditNoteMessage = () => {
+  editNoteMessageModal.value = false
+}
+//=========================================笔记信息编辑框END============================================
+const getData = () => {
+  setTimeout(() => {
+    getNoteInfo(true,true)
+  },100)
+}
 </script>
 
 <template>
@@ -393,9 +517,12 @@ router.beforeEach((to, from, next) => {
             <template v-if="!loading && noteList.length > 0">
               <n-list-item v-for="(note,index) in noteList" :key="note.id"
                            :data-index="index"
-                           @contextmenu="showContextMenu($event,note.id,!!note.isTop,note.noteTitle,note.isNewBuild)"
+                           :style="{ backgroundImage: `url(${note.noteBackgroundImage})`,backgroundSize: '100% 100%'}"
+                           @contextmenu="showContextMenu($event,note.id,!!note.isTop,note.noteTitle,note.isNewBuild,note.noteBody,note.noteTags,note.noteBackgroundImage,!!note.isLock)"
                            :class="{'contexting':(contextMenu.noteId === note.id && contextMenu.show)}"
-                           @click="goToEditNote(note.id,!!note.isLock)">
+                           @click="goToEditNote(note.id,!!note.isLock)"
+                           class="list-class"
+              >
                 <NoteCard :note-id=note.id :note-title="note.noteTitle ? note.noteTitle : defaultTitle"
                           :note-body="note.noteBody"
                           :note-time="note.updateTime" :is-top="!!note.isTop" :is-lock="!!note.isLock"
@@ -423,7 +550,7 @@ router.beforeEach((to, from, next) => {
     <!--笔记编辑容器-->
     <n-layout-content embedded content-style="padding:20px">
       <!--该处为子路由-->
-      <router-view/>
+      <router-view @reloadLeftToolbar="getData"/>
     </n-layout-content>
   </n-layout>
   <!--右键下拉菜单-->
@@ -456,6 +583,58 @@ router.beforeEach((to, from, next) => {
       :show="showAddNoteLockModal"
       @cancel="cancelShowAddNoteLocalModal"
       @confirm="getAddNoteLockPassword"></add-note-lock-password>
+  <!--编辑笔记信息-->
+  <n-modal :show="editNoteMessageModal" style="width: 400px;height: 580px">
+    <n-card>
+      <n-space vertical>
+        <n-form
+            :label-width="80"
+            ref="editNoteMessageRef"
+            :model="editNoteMessageForm"
+            :rules="editNoteMessageRules"
+        >
+          <n-form-item label="标题" path="noteTitle">
+            <n-input v-model:value="editNoteMessageForm.noteTitle" placeholder="输入标题"/>
+          </n-form-item>
+          <n-form-item label="主体" path="noteBody">
+            <n-input v-model:value="editNoteMessageForm.noteBody" type="textarea" placeholder="输入主体"/>
+          </n-form-item>
+          <n-form-item label="标签" path="noteTags">
+            <n-dynamic-tags v-model:value="editNoteMessageForm.noteTags"/>
+          </n-form-item>
+        </n-form>
+        <n-space vertical>
+          <n-text>背景图片</n-text>
+          <n-upload action="/note-serve/image/upload"
+                    :headers="{'Authorization': 'Bearer ' + token,
+                      'id': userId}"
+                    accept="image/*"
+                    @finish="handleFinish"
+                    :show-file-list="false"
+                    :max="5"
+          >
+            <n-avatar
+                v-if="contextMenu.noteBackgroundImage !== null"
+                size="large"
+                style="width: 160px;height: 150px;cursor: pointer"
+                :src="contextMenu.noteBackgroundImage"
+            />
+            <n-button v-else text>
+              <n-icon :component="FileImageOutlined" :size="150"></n-icon>
+            </n-button>
+          </n-upload>
+        </n-space>
+        <n-grid cols="2" :x-gap="12" style="margin-top: 5px">
+          <n-gi>
+            <n-button @click="saveEditNoteMessage" block ghost type="primary">保存</n-button>
+          </n-gi>
+          <n-gi>
+            <n-button block tertiary @click="cancelEditNoteMessage">取消</n-button>
+          </n-gi>
+        </n-grid>
+      </n-space>
+    </n-card>
+  </n-modal>
 </template>
 <style>
 .n-layout-sider.n-layout-sider--collapsed.note-list .n-layout-toggle-button {
@@ -472,5 +651,9 @@ router.beforeEach((to, from, next) => {
 
 .n-list .n-list-item.contexting {
   box-shadow: 0 0 4px #18A056;
+}
+
+.list-class {
+  margin-bottom: 5px;
 }
 </style>

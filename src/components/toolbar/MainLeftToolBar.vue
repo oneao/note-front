@@ -8,10 +8,11 @@ import {
   SearchRound,
   AccessTimeRound,
   StarBorderRound,
-  ShoppingBagOutlined,
   DeleteOutlineRound,
   NoteOutlined,
-  NoteAltOutlined
+  NoteAltOutlined,
+  CalendarMonthOutlined,
+  StickyNote2Outlined
 } from '@vicons/material'
 import bus from 'vue3-eventbus'
 //引入路由对象
@@ -56,14 +57,14 @@ const mainMenus = [
   },
   {
     label: '小记',
-    icon: NoteOutlined,
+    icon: StickyNote2Outlined,
     icon_size: 24,
     to: '/smallNote'
   },
   {
     label: '笔记',
-    icon: NoteAltOutlined,
-    icon_size: 24,
+    icon: NoteOutlined,
+    icon_size: 23,
     to: '/note'
   },
   {
@@ -73,16 +74,16 @@ const mainMenus = [
     to: ''
   },
   {
-    label: '商城',
-    icon: ShoppingBagOutlined,
-    icon_size: 26,
-    to: ''
+    label: '日历',
+    icon: CalendarMonthOutlined,
+    icon_size: 24,
+    to: '/calendar'
   },
   {
     label: '回收站',
     icon: DeleteOutlineRound,
     icon_size: 28,
-    to: ''
+    to: '/recycle'
   },
 ]
 //路由地址

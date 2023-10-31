@@ -10,6 +10,10 @@ export const useUserStore = defineStore(
         const headPic = ref('')
         const level = ref(0)
         const time = ref('')
+        const updateNicknameAndHeadPic = (u_nickname,u_headPic) => {
+            nickname.value = u_nickname
+            headPic.value = u_headPic
+        }
         const setUserInfo = (u_token,u_id,u_email,u_nickname,u_headPic,u_level,u_time) =>{
             token.value = u_token
             id.value = u_id
@@ -40,7 +44,7 @@ export const useUserStore = defineStore(
             }
         })
 
-        return {token,id,email,nickname,headPic,level,time,setUserInfo,levelInfo,resetUserInfo}
+        return {token,id,email,nickname,headPic,level,time,setUserInfo,levelInfo,resetUserInfo,updateNicknameAndHeadPic}
     },{
         persist : {
             storage : localStorage,

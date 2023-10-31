@@ -81,9 +81,10 @@ const getNoteShareInfo = () => {
       showNoteSharePasswordModal.value = false
       show403.value = false
       noteShareObj.value = res.data.data //赋值
+      likeHeart.value = noteShareObj.value.isLike !== 0
       loadingBar.finish()
     }else {
-      console.log(res)
+      message.error(res.data.message)
       loadingBar.error()
     }
   }).catch(err => {
@@ -153,7 +154,8 @@ const verifyNotePasswordCancelMethod = () => {
     <div class="footer">
       <n-space vertical style="text-align: center">
         <n-gradient-text type="error" style="font-weight: bold" :size="22">ONEAO-NOTE</n-gradient-text>
-        <n-text depth="3">注意：分享{{noteShareObj.noteShareTime}}天内有效!</n-text>
+        <n-text depth="3" v-if="noteShareObj.noteShareTime === -1">注意：分享永久有效!</n-text>
+        <n-text depth="3" v-else>注意：分享{{noteShareObj.noteShareTime}}天内有效!</n-text>
       </n-space>
     </div>
   </div>

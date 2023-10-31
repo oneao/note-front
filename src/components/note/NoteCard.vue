@@ -1,5 +1,4 @@
 <script setup>
-import {watch} from "vue";
 import {LockOutlined, LockOpenFilled} from '@vicons/material'
 
 const noteProps = defineProps({
@@ -10,6 +9,7 @@ const noteProps = defineProps({
   isTop: {type: Boolean, required: true},
   isLock: {type: Boolean, required: true},
   noteTime: {type: String, required: true},
+
 })//note组件需要的属性值
 const fontTitleColor = () => {
   const fontCss = [
@@ -31,9 +31,12 @@ const emits = defineEmits(['clickLock','clickAddLock'])
 </script>
 
 <template>
-  <n-thing>
+  <n-thing >
     <template #header>
-      <n-gradient-text :size="18" :type="fontTitleColor()">
+      <n-gradient-text v-if="isLock" :size="18" style="font-weight: bold" :type="fontTitleColor()">
+        该笔记已加锁,暂无法查看标题!
+      </n-gradient-text>
+      <n-gradient-text v-else :size="18" style="font-weight: bold" :type="fontTitleColor()">
         {{ noteTitle }}
       </n-gradient-text>
     </template>
@@ -66,5 +69,4 @@ const emits = defineEmits(['clickLock','clickAddLock'])
       </n-space>
     </template>
   </n-thing>
-
 </template>

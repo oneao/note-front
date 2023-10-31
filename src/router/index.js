@@ -19,6 +19,26 @@ const routes = [
     {
         path: '/noteShare',
         component:() => import('@/views/note/ShareNoteLayout.vue')
+    },
+    {
+        path: '/userCenter',
+        component:() => import('@/views/user/UserCenter.vue')
+    },
+    {
+        path: '/userAccountSetting',
+        component:() => import('@/views/user/UserAccountSetting.vue')
+    },
+    {
+        path: '/calendar',
+        component:() => import('@/views/calendar/Calendar.vue')
+    },
+    {
+        path: '/recycle',
+        component:() => import('@/views/recycle/RecycleBin.vue')
+    },
+    {
+        path: '/shareCenter',
+        component:() => import('@/views/share/ShareCenter.vue')
     }
 ]
 const router = createRouter({

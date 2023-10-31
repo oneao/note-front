@@ -11,6 +11,8 @@ const SmallNoteApi = {
     //获取单个小记
     getOneSmallNote : (id) => get(`/smallNote/getOneSmallNote?id=${id}`),
     //更新小记
-    updateSmallNote : (obj) => post(`/smallNote/updateSmallNote`,obj)
+    updateSmallNote : (obj) => post(`/smallNote/updateSmallNote`,obj),
+    //获取日历上的内容
+    getSmallNoteForCalendar:() => get(`/smallNote/getSmallNoteForCalendar`)
 }
 export default SmallNoteApi;
