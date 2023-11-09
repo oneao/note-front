@@ -1,5 +1,6 @@
 <script setup>
 import {NotificationsNoneFilled, AccountBoxRound, ManageAccountsFilled, LogOutFilled} from "@vicons/material"
+import {CloseOutlined} from '@vicons/antd'
 import {storeToRefs} from "pinia";
 import {ref, onMounted, watch} from 'vue';
 import {useRouter} from "vue-router";
@@ -24,7 +25,7 @@ const userStore = useUserStore();
 const {id: userId, headPic: userAvatar, nickname} = storeToRefs(userStore);
 const {levelInfo, resetUserInfo} = userStore;
 //头像下拉菜单信息
-import {NIcon} from "naive-ui";
+import {NIcon, useDialog} from "naive-ui";
 //读取图标
 const renderIcon = (icon) => {
   return () => {
@@ -85,66 +86,24 @@ const updateMenuStatus = (key, item) => {
 }
 
 
-const activeTab = ref('')
-const tabs = [
-  {
-    name: 'zan',
-    title: '点赞',
-    messages: [
-      {content: '你的文章《XX》收到一条点赞', time: '2023-10-13 22:12:11'},
-      {content: '你的文章《YY》收到一条点赞', time: '2023-10-13 22:12:11'},
-      {content: '你的文章《YY》收到一条点赞', time: '2023-10-13 22:12:11'},
-      {content: '你的文章《YY》收到一条点赞', time: '2023-10-13 22:12:11'},
-      {content: '你的文章《YY》收到一条点赞', time: '2023-10-13 22:12:11'},
-      {content: '你的文章《YY》收到一条点赞', time: '2023-10-13 22:12:11'},
-    ],
-  },
-  {
-    name: 'star',
-    title: '关注',
-    messages: [
-      {content: '张三 关注了你', time: '2023-10-13 22:12:11'},
-      {content: '张三 关注了你', time: '2023-10-13 22:12:11'},
-    ],
-  },
-  {
-    name: 'comment',
-    title: '评论',
-    messages: [
-      {content: '张三 评论了你的文章《XX》"学到了"', time: '2023-10-13 22:12:11'},
-      {content: '李四 评论了你的文章《YY》"不如Vue"', time: '2023-10-13 22:12:11'},
-    ],
-  },
-]
-const count = ref(tabs.map((item) => item.messages).flat().length)
-
-watch(activeTab, (v) => {
-  if (count === 0) return
-  const tabIndex = tabs.findIndex((item) => item.name === v)
-  count.value -= tabs[tabIndex].messages.length
-  if (count.value < 0) count.value = 0
-})
-
-function handlePopoverShow(show) {
-  if (show && !activeTab.value) {
-    activeTab.value = tabs[0]?.name
-  }
-}
-const messageTab = ref([])
 //===========================================websocket==============================================
 import {useSocket} from '@/components/common/WebSocket.vue'
-const { socket, send, on, off } = useSocket('ws://localhost:8080/note/webSocket');
+
+const messageTab = ref([])
+const {socket, send, on, off} = useSocket('ws://localhost:8080/note/webSocket');
 on('open', event => {
   console.log("Connected to server", event);
 });
 on('message', data => {
-  if (data !== null && data !== ''){
+  if (data !== null && data !== '') {
     const uId = data.split('^')[0];
     const uIdNumber = parseInt(uId);
-    if (uIdNumber === userId.value){
-      const time = data.split('^')[1];
-      const message = data.split('^').slice(2).join('^');
+    if (uIdNumber === userId.value) {
+      const index = data.split('^')[1];
+      const time = data.split('^')[2];
+      const message = data.split('^').slice(3).join('^');
       const obj = {
+        index,
         time,
         message
       };
@@ -159,7 +118,93 @@ on('error', error => {
 on('close', event => {
   console.log("Connection closed", event);
 });
+const getLikeMessage = () => {
+  UserApi.getLikeMessage().then(res => {
+    if (res.data.code === 200) {
+      if (res.data.data !== null) {
+        res.data.data.forEach(item => {
+          const index = item.split('^')[0]
+          const time = item.split('^')[1]
+          const message = item.split('^')[2]
+          const obj = {
+            index, time, message
+          }
+          messageTab.value.push(obj)
+        })
+      }
+    }
+  })
+}
+onMounted(() => {
+  getLikeMessage()
+})
 //===========================================websocket==============================================
+
+//===========================================删除点赞信息=============================================
+const goToDelLikeMessage = (item) => {
+  const value = item.index + "^" + item.time + "^" + item.message
+  UserApi.delOneLikeMessage(value).then(res => {
+    if (res.data.code === 200) {
+      message.success("删除成功")
+      //删除成功
+      const itemIndex = messageTab.value.findIndex(value => item === value);
+      messageTab.value = messageTab.value.filter(value => {
+        return item !== value;
+      })
+      if (itemIndex !== -1) {
+        messageTab.value = messageTab.value.map(value => {
+          if (value.index > itemIndex) {
+            value.index -= 1;
+          }
+          return value;
+        });
+      }
+    } else {
+      //删除失败
+      message.error(res.data.message)
+    }
+  })
+}
+//n-tabs标签
+const dialog = useDialog();
+const handleBeforeLeave = (tabName) => {
+  switch (tabName) {
+    case "delAll":
+      dialog.success({
+        title: "删除所有",
+        content: "你确定删除所有信息？",
+        positiveText: "确定",
+        negativeText: "取消",
+        maskClosable: false,
+        onPositiveClick:() => {
+          if (messageTab.value.length > 0){
+            UserApi.delAllLikeMessage().then(res => {
+              if(res.data.code === 200){
+                messageTab.value = []
+                message.success('删除所有点赞信息成功')
+              }else {
+                message.error(res.data.message)
+              }
+            }).catch(err => {
+              message.error(err)
+            })
+          }else{
+            message.info('当前没有消息哦！')
+          }
+        },
+        onNegativeClick:() => {
+
+        }
+      });
+      return false;
+    default:
+      return true;
+  }
+}
+
+//===========================================删除点赞信息=============================================
+
+
 </script>
 
 <template>
@@ -204,29 +249,38 @@ on('close', event => {
       <n-divider v-if="userId !== null" vertical style="position: relative;top:5px;"
                  :style="theme.theDividingLineColor"/>
       <!--消息提示-->
-      <n-badge dot processing :offset="[-6,1]">
-        <n-popover trigger="hover" placement="bottom-end">
+      <n-badge :value="messageTab.length" processing :offset="[-6,1]">
+        <n-popover trigger="click" placement="bottom-end">
           <template #trigger>
             <n-button tertiary circle>
               <n-icon size="19" :component="NotificationsNoneFilled"></n-icon>
             </n-button>
           </template>
           <n-thing>
-            <n-tabs type="line" animated>
+            <n-tabs type="line" animated default-value="likes"
+                    @before-leave="handleBeforeLeave">
               <n-tab-pane name="likes" tab="点赞">
-                <n-space vertical v-if="messageTab.length > 0" v-for="item of messageTab">
-                  <n-text>{{item.message}}</n-text>
-                  <n-text :depth="3">{{ item.time }}</n-text>
-                  <n-divider style="margin-top: 0px"/>
-                </n-space>
+                <n-scrollbar style="max-height: 200px">
+                  <n-space vertical v-if="messageTab.length > 0" v-for="item of messageTab">
+                    <n-text>{{ item.message }}</n-text>
+                    <n-space justify="space-between">
+                      <n-text :depth="3">{{ item.time }}</n-text>
+                      <n-icon :component="CloseOutlined" @click="goToDelLikeMessage(item)"
+                              style="cursor: pointer"></n-icon>
+                    </n-space>
+                    <n-divider style="margin-top: 0px"/>
+                  </n-space>
+                </n-scrollbar>
               </n-tab-pane>
-              <n-tab-pane name="comments" tab="评论">
+              <n-tab-pane name="comments" tab="评论" :disabled="true">
+                Hey Jude
+              </n-tab-pane>
+              <n-tab-pane name="delAll" tab="删除所有">
                 Hey Jude
               </n-tab-pane>
             </n-tabs>
           </n-thing>
         </n-popover>
-
       </n-badge>
       <!--全局背景切换-->
       <n-switch size="medium" style="margin-top: 6px" @update:value="changeTheme(!isDarkTheme)"
@@ -242,6 +296,7 @@ on('close', event => {
       <n-button v-if="userId === null" tertiary type="primary" @click="changeModalStatus(true)">登录</n-button>
     </n-space>
   </n-space>
+
 </template>
 
 <style scoped>

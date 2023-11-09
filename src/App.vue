@@ -54,42 +54,6 @@ onMounted(() => {
       }
     }
   })
-  //setTimeout(() => {
-  //  window.L2Dwidget
-  //      .on('*', (name) => {
-  //        if (name === 'tapface' || name === 'tapbody'){
-  //
-  //        }
-  //      })
-  //      .init({
-  //    pluginRootPath: 'public/live2dw/',
-  //    pluginJsPath: 'lib/',
-  //    pluginModelPath: 'live2d-widget-model-koharu/assets/',
-  //    tagMode: false,
-  //    debug: false,
-  //    model: { jsonPath: '/public/live2dw/live2d-widget-model-haru_2/assets/haru02.model.json' },
-  //    dialog: {
-  //      enable: true, //是否开启对话框
-  //      script: {
-  //        //每20s，显示一言（调用一言Api返回的句子）
-  //        'every idle 20s': '$hitokoto$',
-  //        //触摸到class='star'对象,将会展示的文字
-  //        'hover .star': '星星在天上而你在我心里 (*/ω＼*)',
-  //        //触摸到身体
-  //        'tap body': '害羞⁄(⁄ ⁄•⁄ω⁄•⁄ ⁄)⁄',
-  //        //触摸到头部
-  //        'tap face': '~~'
-  //      }
-  //    },
-  //    display: { //人物的属性配置
-  //      position: 'left',
-  //      width: 150,
-  //      height: 300,
-  //      hOffset: 70, // 横向偏移
-  //      vOffset: 0 // 纵向偏移
-  //    },
-  //  })
-  //}, 1000)
 })
 onBeforeUnmount(() => {
   document.querySelector('#live2d-widget').remove();
