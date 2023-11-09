@@ -105,6 +105,8 @@ const verifyNotePasswordCancelMethod = () => {
   noteSharePassword.value = '' //重置
   showNoteSharePasswordModal.value = false
 } //点击取消按钮
+
+import Comment from '@/components/common/Comment.vue'
 </script>
 <template>
   <div v-if="!show404 && !show403" class="page-container">
@@ -151,6 +153,16 @@ const verifyNotePasswordCancelMethod = () => {
     <div class="content">
       <div class="note-content" v-html="noteShareObj.noteShareContent"></div>
     </div>
+    <n-divider/>
+    <u-notice-bar
+        background="#ecf5ff"
+        color="#409eff"
+        prefix-icon="dianzan"
+        suffix-icon="comment"
+        data="🔥首次进入该页面，刷新两次页面即可查看评论。"
+    ></u-notice-bar>
+    <comment />
+    <n-divider/>
     <div class="footer">
       <n-space vertical style="text-align: center">
         <n-gradient-text type="error" style="font-weight: bold" :size="22">ONEAO-NOTE</n-gradient-text>
@@ -196,7 +208,6 @@ const verifyNotePasswordCancelMethod = () => {
     </n-card>
   </n-modal>
 </template>
-
 
 <style scoped>
 .centered {

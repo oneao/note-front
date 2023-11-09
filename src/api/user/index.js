@@ -1,4 +1,4 @@
-import {get,post,put} from '../index'
+import {get,post,put,del} from '../index'
 
 const UserApi = {
     //登录
@@ -21,6 +21,11 @@ const UserApi = {
     getForgetCode:(email) => get(`/user/getForgetCode?email=${email}`),
     //修改忘记的密码
     updateForgetPassword:(obj) => put(`/user/updateForgetPassword`,obj),
-
+    //获取信息
+    getLikeMessage:() => get(`/user/getLikeMessage`),
+    //删除部分点赞信息
+    delOneLikeMessage:(value) => del (`/user/delOneLikeMessage`,value),
+    //删除所有点赞信息
+    delAllLikeMessage:() => del(`/user/delAllLikeMessage`)
 }
 export default UserApi;

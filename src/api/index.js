@@ -10,16 +10,23 @@ axios.defaults.timeout = 10000;
 axios.defaults.headers.post['Content-Type'] = 'application/json;charset=UTF-8';
 //请求拦截器
 axios.interceptors.request.use(function (config) {
+    //console.log(config.url)
     //对特定请求路径进行拦截
     //需要拦截的路径，可以在此处对请求的路径进行拦截处理
-    if(config.url === '/user/login' || config.url === '/user/getCode' || config.url === '/user/register'
-        || config.url === '/noteShare/getShareNote' || config.url === '/noteShare/goToLick'
-        || config.url.startsWith('/noteShare/getShareNoteIsLock' || config.url.startsWith('/openai'))
+    if( config.url === '/user/login' ||
+        config.url.startsWith('/user/getCode') ||
+        config.url === '/user/register' ||
+        config.url === '/noteShare/getShareNote' ||
+        config.url === '/noteShare/goToLick' ||
+        config.url.startsWith('/noteShare/getShareNoteIsLock') ||
+        config.url.startsWith('/openai') ||
+        config.url.startsWith('/comment') ||
+        config.url.startsWith('/commentUser')
     ){
     }else{
         let token = JSON.parse(window.localStorage.getItem("user")).token;
         let userInfo = window.localStorage.getItem("user")
-        if (token === null || token === ''){
+        if (token === null || token === '' || userInfo === null || userInfo === '') {
             const { message, notification, dialog, loadingBar } = createDiscreteApi(
                 ['message']
             )
@@ -48,7 +55,6 @@ axios.interceptors.response.use(function (resp) {
     //对指定的应答结果进行处理
     if(resp && resp.data.code === 50000){
         //此时token无效，需要显示登录
-        //TODO:未登录，优化
         const { message, notification, dialog, loadingBar } = createDiscreteApi(
             ['message']
         )
@@ -122,6 +128,23 @@ export function del(url, params = {}) {
 export function put(url, params = {}) {
     return new Promise((resolve, reject) => {
         axios.put(url, params)
+            .then(res => {
+                resolve(res);
+            })
+            .catch(err => {
+                reject(err);
+            });
+    });
+}
+/**
+ * patch请求
+ * @param url
+ * @param params
+ * @returns {Promise<unknown>}
+ */
+export function patch(url, params = {}) {
+    return new Promise((resolve, reject) => {
+        axios.patch(url, params)
             .then(res => {
                 resolve(res);
             })
