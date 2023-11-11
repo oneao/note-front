@@ -1,16 +1,13 @@
 <script setup>
-import {h, ref, watch} from 'vue';
+import {h, ref, watch,inject} from 'vue';
 import {NIcon} from "naive-ui";
 import {
   AddBoxRound,
-  NoteRound,
-  NoteAltRound,
   SearchRound,
   AccessTimeRound,
   StarBorderRound,
   DeleteOutlineRound,
   NoteOutlined,
-  NoteAltOutlined,
   CalendarMonthOutlined,
   StickyNote2Outlined
 } from '@vicons/material'
@@ -18,7 +15,6 @@ import bus from 'vue3-eventbus'
 //引入路由对象
 import {useRouter} from "vue-router";
 
-const router = useRouter();
 //读取图标
 const renderIcon = (icon, size, color) => {
   return () => {
@@ -32,7 +28,7 @@ const addOptions = [
   {
     label: '新增小记',
     key: 'smallNote',
-    icon: renderIcon(NoteRound, 22, '#2080f0'),
+    icon: renderIcon(StickyNote2Outlined, 20, '#2080f0'),
     props: {
       onClick: () => {
         router.push('/smallNote').then(() => {
@@ -44,7 +40,7 @@ const addOptions = [
   {
     label: '新增笔记',
     key: 'note',
-    icon: renderIcon(NoteAltRound, 22, '#18a058')
+    icon: renderIcon(NoteOutlined, 20, '#18a058')
   }
 ]
 //主菜单
@@ -71,7 +67,7 @@ const mainMenus = [
     label: '收藏',
     icon: StarBorderRound,
     icon_size: 28,
-    to: ''
+    to: '/collection'
   },
   {
     label: '日历',
@@ -87,12 +83,8 @@ const mainMenus = [
   },
 ]
 //路由地址
-const routerPath = ref(router.currentRoute.value.path)
-watch(() => router.currentRoute.value,
-    newData => {
-      routerPath.value = newData.path
-    }
-)
+const router = useRouter();
+const routerPath = inject('routerPath')
 const isHighlightMenu = (toRouterPath) => {
   if (!toRouterPath) return false;
   return routerPath.value.startsWith(toRouterPath)

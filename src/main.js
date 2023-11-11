@@ -17,9 +17,9 @@ import UndrawUi from 'undraw-ui'
 import 'undraw-ui/dist/style.css'
 
 const app = createApp(App)
+app.use(UndrawUi)
 app.use(eventBus)
 app.use(pinia)
 app.use(router)
-app.use(UndrawUi)
 app.mount('#app')
  

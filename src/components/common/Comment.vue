@@ -1,8 +1,19 @@
 <script setup>
+const props = defineProps({
+  showCommentUserMessage:{type:Boolean,default:false}
+})
+watch(() => props.showCommentUserMessage,(newValue,oldValue) => {
+  showModal.value = newValue
+  if(newValue) {
+    commentUserForm.value.commentUserName = commentUserName.value || nickname.value
+    commentUserForm.value.commentUserEmail = commentUserEmail.value || email.value
+    commentUserForm.value.commentUserAvatar = commentUserAvatar.value || headPic.value || 'http://127.0.0.1:9000/note-bucket/adf77c91-1fe2-4610-971c-c033b9b62242.jpg'
+  }
+})
 // 下载表情包资源emoji.zip https://readpage.lanzouy.com/b04duelxg 密码:undraw
 // static文件放在public下,引入emoji.ts文件可以移动assets下引入,也可以自定义到指定位置
 import emoji from '../../utils/emoji'
-import {reactive, onMounted} from 'vue'
+import {reactive, onMounted,watch} from 'vue'
 import {UToast, usePage} from 'undraw-ui'
 
 import axios from "axios";
@@ -72,6 +83,7 @@ const config = reactive({
   },
   emoji: emoji,
   comments: [],
+  homeLink:`/`
 })
 
 
@@ -318,7 +330,7 @@ const sorted = (latest) => {
 
 <template>
   <u-comment-scroll :disable="disable" @more="more">
-    <u-comment :config="config" @submit="submit" @like="like" upload page>
+    <u-comment :config="config" @submit="submit" @like="like" upload page >
       <!-- <template>导航栏卡槽</template> -->
       <!-- <template #info>用户信息卡槽</template> -->
       <!-- <template #card>用户信息卡片卡槽</template> -->

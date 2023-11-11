@@ -22,7 +22,7 @@ const {changeModalStatus} = handOffModal;
 import {useUserStore} from "@/stores/userStore";
 
 const userStore = useUserStore();
-const {id: userId, headPic: userAvatar, nickname} = storeToRefs(userStore);
+const {id: userId, headPic: userAvatar, nickname, token} = storeToRefs(userStore);
 const {levelInfo, resetUserInfo} = userStore;
 //头像下拉菜单信息
 import {NIcon, useDialog} from "naive-ui";
@@ -87,15 +87,47 @@ const updateMenuStatus = (key, item) => {
 
 
 //===========================================websocket==============================================
+//评论============================
+const commentObj = {
+  userId: 0,
+  index: 0,
+  time: '',
+  message: ''
+}
+const commentList = ref([])
+//评论============================
+
 import {useSocket} from '@/components/common/WebSocket.vue'
 
+
 const messageTab = ref([])
-const {socket, send, on, off} = useSocket('ws://localhost:8080/note/webSocket');
+const isJSONString = (data) => {
+  try {
+    JSON.parse(data);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+if (userId.value === null || userId.value === '') {
+  userId.value = -1
+}
+const {socket, send, on, off} = useSocket(`ws://localhost:8080/note/webSocket/${userId.value}`);
 on('open', event => {
   console.log("Connected to server", event);
 });
+
 on('message', data => {
-  if (data !== null && data !== '') {
+  if (data === 'ping') {
+  } else if (data !== null && data !== '' && isJSONString(data)) {
+    const jsonData = JSON.parse(data);
+    jsonData.message = '你分享的笔记《' + jsonData.message + '》被评论啦！😝';
+    // 转换时间格式
+    const dateTime = new Date(jsonData.time);
+    jsonData.time = dateTime.toISOString().slice(0, 19).replace('T', ' ');
+    commentList.value.push(jsonData);
+  } else {
     const uId = data.split('^')[0];
     const uIdNumber = parseInt(uId);
     if (uIdNumber === userId.value) {
@@ -111,7 +143,6 @@ on('message', data => {
     }
   }
 });
-
 on('error', error => {
   console.error("WebSocket Error:", error);
 });
@@ -120,6 +151,7 @@ on('close', event => {
 });
 const getLikeMessage = () => {
   UserApi.getLikeMessage().then(res => {
+    console.log(res)
     if (res.data.code === 200) {
       if (res.data.data !== null) {
         res.data.data.forEach(item => {
@@ -135,8 +167,23 @@ const getLikeMessage = () => {
     }
   })
 }
+const getCommentReply = () => {
+  UserApi.getCommentReply().then(res => {
+    if (res.data.code === 200) {
+      if (res.data.data !== null) {
+        res.data.data.forEach(item => {
+          item.message = '你分享的笔记《' + item.message + '》被评论啦！😝';
+          commentList.value.push(item)
+        })
+      }
+    }
+  })
+}
 onMounted(() => {
-  getLikeMessage()
+  if (token.value !== null && token.value !== '') {
+    getLikeMessage()
+    getCommentReply()
+  }
 })
 //===========================================websocket==============================================
 
@@ -147,18 +194,9 @@ const goToDelLikeMessage = (item) => {
     if (res.data.code === 200) {
       message.success("删除成功")
       //删除成功
-      const itemIndex = messageTab.value.findIndex(value => item === value);
       messageTab.value = messageTab.value.filter(value => {
         return item !== value;
       })
-      if (itemIndex !== -1) {
-        messageTab.value = messageTab.value.map(value => {
-          if (value.index > itemIndex) {
-            value.index -= 1;
-          }
-          return value;
-        });
-      }
     } else {
       //删除失败
       message.error(res.data.message)
@@ -176,23 +214,24 @@ const handleBeforeLeave = (tabName) => {
         positiveText: "确定",
         negativeText: "取消",
         maskClosable: false,
-        onPositiveClick:() => {
-          if (messageTab.value.length > 0){
-            UserApi.delAllLikeMessage().then(res => {
-              if(res.data.code === 200){
+        onPositiveClick: () => {
+          if (messageTab.value.length > 0) {
+            UserApi.delAllReplyMessage().then(res => {
+              if (res.data.code === 200) {
                 messageTab.value = []
-                message.success('删除所有点赞信息成功')
-              }else {
+                commentList.value = []
+                message.success('删除所有信息成功')
+              } else {
                 message.error(res.data.message)
               }
             }).catch(err => {
               message.error(err)
             })
-          }else{
+          } else {
             message.info('当前没有消息哦！')
           }
         },
-        onNegativeClick:() => {
+        onNegativeClick: () => {
 
         }
       });
@@ -202,6 +241,21 @@ const handleBeforeLeave = (tabName) => {
   }
 }
 
+const delOneCommentReply = (item) => {
+  UserApi.delOneCommentReply(item.index).then(res => {
+    if (res.data.code === 200) {
+      message.success("删除成功")
+      commentList.value = commentList.value.filter(k => {
+        return k.index !== item.index
+      })
+      commentList.value.forEach(k => {
+        if(k.index > item.index){
+          k.index = k.index - 1;
+        }
+      })
+    }
+  })
+}
 //===========================================删除点赞信息=============================================
 
 
@@ -249,7 +303,7 @@ const handleBeforeLeave = (tabName) => {
       <n-divider v-if="userId !== null" vertical style="position: relative;top:5px;"
                  :style="theme.theDividingLineColor"/>
       <!--消息提示-->
-      <n-badge :value="messageTab.length" processing :offset="[-6,1]">
+      <n-badge :value="messageTab.length + commentList.length" processing :offset="[-6,1]">
         <n-popover trigger="click" placement="bottom-end">
           <template #trigger>
             <n-button tertiary circle>
@@ -272,11 +326,20 @@ const handleBeforeLeave = (tabName) => {
                   </n-space>
                 </n-scrollbar>
               </n-tab-pane>
-              <n-tab-pane name="comments" tab="评论" :disabled="true">
-                Hey Jude
+              <n-tab-pane name="comments" tab="评论">
+                <n-scrollbar style="max-height: 200px">
+                  <n-space vertical v-if="commentList.length > 0" v-for="item of commentList">
+                    <n-text>{{ item.message }}</n-text>
+                    <n-space justify="space-between">
+                      <n-text :depth="3">{{ item.time }}</n-text>
+                      <n-icon :component="CloseOutlined"
+                              style="cursor: pointer" @click="delOneCommentReply(item)"></n-icon>
+                    </n-space>
+                    <n-divider style="margin-top: 0px"/>
+                  </n-space>
+                </n-scrollbar>
               </n-tab-pane>
               <n-tab-pane name="delAll" tab="删除所有">
-                Hey Jude
               </n-tab-pane>
             </n-tabs>
           </n-thing>

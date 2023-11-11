@@ -105,8 +105,10 @@ const verifyNotePasswordCancelMethod = () => {
   noteSharePassword.value = '' //重置
   showNoteSharePasswordModal.value = false
 } //点击取消按钮
-
+//=======================================评论模块==========================================================
 import Comment from '@/components/common/Comment.vue'
+const showCommentUserMessage = ref(false)
+//=======================================评论模块==========================================================
 </script>
 <template>
   <div v-if="!show404 && !show403" class="page-container">
@@ -154,14 +156,11 @@ import Comment from '@/components/common/Comment.vue'
       <div class="note-content" v-html="noteShareObj.noteShareContent"></div>
     </div>
     <n-divider/>
-    <u-notice-bar
-        background="#ecf5ff"
-        color="#409eff"
-        prefix-icon="dianzan"
-        suffix-icon="comment"
-        data="🔥首次进入该页面，刷新两次页面即可查看评论。"
-    ></u-notice-bar>
-    <comment />
+    <n-gradient-text :size="16" type="warning">
+      首次进入需刷新两次页面才显示评论！
+    </n-gradient-text>
+    <comment :show-comment-user-message="showCommentUserMessage" />
+    <n-button @click="showCommentUserMessage = !showCommentUserMessage" style="position: absolute;margin-top: -815px;margin-left: 27px;width: 37px;height:37px" circle text ></n-button>
     <n-divider/>
     <div class="footer">
       <n-space vertical style="text-align: center">

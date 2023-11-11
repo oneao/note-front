@@ -35,7 +35,7 @@ class Socket {
   }
 
   onMessage(event) {
-    console.log('WebSocket message received:', event.data);
+    console.log('接收到消息啦')
     this.emit('message', event.data);
   }
 

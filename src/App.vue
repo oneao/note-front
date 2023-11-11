@@ -1,7 +1,7 @@
 <script setup>
 import RootView from '@/views/RootView.vue'
 import {storeToRefs} from "pinia";
-import {onMounted, provide, watch,onBeforeUnmount} from "vue";
+import {onMounted, provide, watch, onBeforeUnmount, ref} from "vue";
 //主題
 import {useThemeStore} from "@/stores/themeStore";
 
@@ -58,6 +58,17 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.querySelector('#live2d-widget').remove();
 })
+
+//路由跳转
+
+const routerPath = ref(router.currentRoute.value.path)
+watch(() => router.currentRoute.value,
+    newData => {
+      routerPath.value = newData.path
+    }
+)
+//为后代提供数据
+provide('routerPath',routerPath)
 </script>
 
 <template>

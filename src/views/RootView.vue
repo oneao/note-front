@@ -13,8 +13,8 @@ const loginStatusDialog = ref(null)
 //接受app.vue提供的‘是否需要加载页面’
 const needReload = inject('needReload')
 //如果needReload的值为true时，则重新加载页面
-watch(() => needReload.value,newData => {
-  if(newData){
+watch(() => needReload.value, newData => {
+  if (newData) {
     changeLoginStatusDialog();
   }
 })
@@ -44,25 +44,26 @@ const router = useRouter();
 //全局前置路由守卫————初始化的时候被调用、每次路由切换之前被调用
 router.beforeEach((to, from, next) => {
   //如果路由需要跳转
-  if (to.fullPath.startsWith('/noteShare')){
+  if (to.fullPath.startsWith('/noteShare')) {
     show.value = false
-  }else{
+  } else {
     show.value = true
   }
   next()
 })
 const show = ref(true)
 import ShareNoteLayout from "@/views/note/ShareNoteLayout.vue";
+
 </script>
 
 <template>
   <!-- 页面布局 -->
-  <n-layout v-if="show" position="absolute">
+  <n-layout v-if="show"  position="absolute">
     <!--头部-->
-    <n-layout-header bordered style="height:64px;padding: 0 20px;">
+    <n-layout-header  bordered style="height:64px;padding: 0 20px;">
       <MainTopToolBar/>
     </n-layout-header>
-    <!--    底部-->
+    <!--底部-->
     <n-layout position="absolute" style="top: 64px" has-sider>
       <!--左侧应用栏-->
       <n-layout-sider width="64px" bordered content-style="padding: 24px 0;text-align:center;">

@@ -1,13 +1,14 @@
 <script setup>
 import NoteCard from '@/components/note/NoteCard.vue'
-import {h, ref, onMounted, computed} from 'vue'
+import {h, ref, onMounted, computed, inject} from 'vue'
 import {
   NoteAddRound,
   SubtitlesOffOutlined,
   DriveFileRenameOutlineOutlined,
   DeleteOutlineRound,
   ArrowCircleUpRound,
-  ArrowCircleDownFilled
+  ArrowCircleDownFilled,
+  DeleteOutlined
 } from '@vicons/material'
 import {FileImageOutlined} from '@vicons/antd'
 import NoteApi from '@/api/note'
@@ -469,8 +470,18 @@ const cancelEditNoteMessage = () => {
 //=========================================笔记信息编辑框END============================================
 const getData = () => {
   setTimeout(() => {
-    getNoteInfo(true,true)
-  },100)
+    getNoteInfo(true, true)
+  }, 100)
+}
+const routerPath = inject('routerPath')
+//获取编辑笔记id
+const editNoteId = computed(() => {
+  const index = routerPath.value.indexOf('/note/edit/')
+  if (index === -1) return null;
+  return parseInt(routerPath.value.substring('/note/edit/'.length))
+})
+const delBackgroundImage = () => {
+  contextMenu.value.noteBackgroundImage = ''
 }
 </script>
 
@@ -486,7 +497,7 @@ const getData = () => {
         :collapsed-width="0"
     >
       <!--滚动条-->
-      <n-scrollbar>
+      <n-scrollbar @scroll="contextMenu.show = false">
         <!--标题区域:包括笔记列表标题和新增笔记按钮 -->
         <n-card :bordered="false" style="position: sticky;top: 0;z-index: 1;width: calc(100% - 1px)">
           <template #action>
@@ -519,7 +530,7 @@ const getData = () => {
                            :data-index="index"
                            :style="{ backgroundImage: `url(${note.noteBackgroundImage})`,backgroundSize: '100% 100%'}"
                            @contextmenu="showContextMenu($event,note.id,!!note.isTop,note.noteTitle,note.isNewBuild,note.noteBody,note.noteTags,note.noteBackgroundImage,!!note.isLock)"
-                           :class="{'contexting':(contextMenu.noteId === note.id && contextMenu.show)}"
+                           :class="{'contexting':(contextMenu.noteId === note.id && contextMenu.show) || editNoteId === note.id}"
                            @click="goToEditNote(note.id,!!note.isLock)"
                            class="list-class"
               >
@@ -604,17 +615,26 @@ const getData = () => {
           </n-form-item>
         </n-form>
         <n-space vertical>
-          <n-text>背景图片</n-text>
+          <n-space justify="space-between">
+            <n-text>背景图片</n-text>
+            <n-popover trigger="hover">
+              <template #trigger>
+                <n-button @click="delBackgroundImage" type="info" text>
+                  <n-icon :component="DeleteOutlined" :size="22"/>
+                </n-button>
+              </template>
+              删除背景图片
+            </n-popover>
+          </n-space>
           <n-upload action="/note-serve/image/upload"
-                    :headers="{'Authorization': 'Bearer ' + token,
-                      'id': userId}"
+                    :headers="{'Authorization': 'Bearer ' + token,'id': userId}"
                     accept="image/*"
                     @finish="handleFinish"
                     :show-file-list="false"
                     :max="5"
           >
             <n-avatar
-                v-if="contextMenu.noteBackgroundImage !== null"
+                v-if="contextMenu.noteBackgroundImage !== null && contextMenu.noteBackgroundImage !== ''"
                 size="large"
                 style="width: 160px;height: 150px;cursor: pointer"
                 :src="contextMenu.noteBackgroundImage"
@@ -651,6 +671,9 @@ const getData = () => {
 
 .n-list .n-list-item.contexting {
   box-shadow: 0 0 4px #18A056;
+}
+
+.n-list .n-list-item.selectItem {
 }
 
 .list-class {

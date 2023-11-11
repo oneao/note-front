@@ -21,11 +21,15 @@ const UserApi = {
     getForgetCode:(email) => get(`/user/getForgetCode?email=${email}`),
     //修改忘记的密码
     updateForgetPassword:(obj) => put(`/user/updateForgetPassword`,obj),
-    //获取信息
+    //获取点赞信息
     getLikeMessage:() => get(`/user/getLikeMessage`),
     //删除部分点赞信息
     delOneLikeMessage:(value) => del (`/user/delOneLikeMessage`,value),
     //删除所有点赞信息
-    delAllLikeMessage:() => del(`/user/delAllLikeMessage`)
+    delAllReplyMessage:() => del(`/user/delAllReplyMessage`),
+    //获取评论信息
+    getCommentReply:() => get(`/user/getCommentReply`),
+    //删除一个评论信息
+    delOneCommentReply:(index) => del(`/user/delOneCommentReply?index=${index}`)
 }
 export default UserApi;

@@ -98,7 +98,6 @@ const resetButton = ref(false)
   <n-layout>
     <n-layout position="absolute" has-sider>
       <n-layout-sider
-
           content-style="padding: 24px;"
           :native-scrollbar="false"
           bordered

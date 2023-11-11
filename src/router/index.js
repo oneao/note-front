@@ -39,6 +39,10 @@ const routes = [
     {
         path: '/shareCenter',
         component:() => import('@/views/share/ShareCenter.vue')
+    },
+    {
+        path: '/collection',
+        component:() => import('@/views/note/Collection.vue')
     }
 ]
 const router = createRouter({
