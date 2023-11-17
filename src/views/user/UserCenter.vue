@@ -10,7 +10,7 @@ const message = useMessage()
 import {useUserStore} from "@/stores/userStore";
 
 const userStore = useUserStore();
-const {updateNicknameAndHeadPic} = userStore;
+const {updateNicknameAndHeadPic,levelInfo} = userStore;
 import UserApi from '@/api/user/index'
 
 onMounted(() => {
@@ -156,7 +156,7 @@ const resetButton = ref(false)
             <n-text style="color: red">会员用户</n-text>
             哦！
           </n-text>
-          <n-text :depth="3" v-else>当前你的等级是普通用户哦</n-text>
+          <n-text :depth="3" v-else>当前你的等级为<n-gradient-text type="warning">{{levelInfo.level}}</n-gradient-text></n-text>
         </n-space>
       </n-layout-sider>
       <n-layout-content embedded position="absolute" style=" left: 496px; top: -40px; bottom: -41px;">

@@ -30,6 +30,7 @@ const UserApi = {
     //获取评论信息
     getCommentReply:() => get(`/user/getCommentReply`),
     //删除一个评论信息
-    delOneCommentReply:(index) => del(`/user/delOneCommentReply?index=${index}`)
+    delOneCommentReply:(index) => del(`/user/delOneCommentReply?index=${index}`),
+
 }
 export default UserApi;

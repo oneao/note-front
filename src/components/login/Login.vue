@@ -71,6 +71,8 @@ const modalStore = handOffModalStore();
 const {changeModalStatus} = modalStore;
 //禁用登录按钮
 import {disabledBtn} from "@/utils/disabledBtn";
+import {useRouter} from "vue-router";
+const router = useRouter();
 
 const handleValidateClick = (e) => {
   e.preventDefault();

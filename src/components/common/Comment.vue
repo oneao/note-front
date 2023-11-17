@@ -34,7 +34,9 @@ onMounted(() => {
   setTimeout(() => {
     config.comments = pageResult.value
   }, 200)
-  getCommentUserLikes()
+  if (commentUserEmail !== '' && commentUserId !== '' && commentUserAvatar !== '' && commentUserName !== '') {
+    getCommentUserLikes()
+  }
 })
 
 //获取用户的点赞信息

@@ -149,7 +149,7 @@ const showContextMenu = (e, noteId, isTop, noteTitle, isNewBuild, noteBody, note
     contextMenu.value.noteId = noteId;//笔记id
     contextMenu.value.isTop = isTop;//是否置顶
     contextMenu.value.isNewBuild = isNewBuild;//是否新建
-    contextMenu.value.noteTitle = noteTitle ? noteTitle : defaultTitle;//笔记标题
+    contextMenu.value.noteTitle = noteTitle ;//笔记标题
     contextMenu.value.noteBackgroundImage = noteBackgroundImage;//背景图片
     contextMenu.value.isLock = isLock
     //为编辑笔记信息表单赋值

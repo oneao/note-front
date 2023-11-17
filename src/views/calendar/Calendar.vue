@@ -62,6 +62,5 @@ const getSmallNoteCalendar = () => {
 <style scoped>
 
 .n-calendar:deep(.n-calendar-cell .n-calendar-date .n-calendar-date__date){
-  background-color: lightblue;
 }
 </style>

@@ -9,7 +9,8 @@ import {
   DeleteOutlineRound,
   NoteOutlined,
   CalendarMonthOutlined,
-  StickyNote2Outlined
+  StickyNote2Outlined,
+  ScreenShareOutlined
 } from '@vicons/material'
 import bus from 'vue3-eventbus'
 //引入路由对象
@@ -68,6 +69,12 @@ const mainMenus = [
     icon: StarBorderRound,
     icon_size: 28,
     to: '/collection'
+  },
+  {
+    label: '分享中心',
+    icon: ScreenShareOutlined,
+    icon_size: 24,
+    to: '/shareCenter'
   },
   {
     label: '日历',

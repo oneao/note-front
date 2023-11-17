@@ -23,11 +23,30 @@ export const useUserStore = defineStore(
             level.value = u_level;
             time.value = u_time;
         }
+        //重置用户等级
+        const resetLevel = (u_level) => {
+            level.value = u_level
+        }
         const levelInfo = computed(()=>{
-            if(level.value === 1){
-                return 'vip会员';
-            }else{
-                return '普通会员';
+            switch (level.value) {
+                case 1:
+                    return {level:'等级1',
+                            levelInfo:'出生在新手村哦！'};
+                case 2:
+                    return {level:'等级2',
+                        levelInfo:'已经摆脱新手村了！'};
+                case 3:
+                    return {level:'等级3',
+                        levelInfo:'开始大展身手了！'};
+                case 4:
+                    return {level:'等级4',
+                        levelInfo:'占有一席之地了！'};
+                case 5:
+                    return {level:'等级5',
+                        levelInfo:'距离顶端就差一步了！'};
+                case 6:
+                    return {level:'等级6',
+                        levelInfo:'已经云上之巅了！'};
             }
         })
         const resetUserInfo = () => {
@@ -43,8 +62,7 @@ export const useUserStore = defineStore(
                 time.value = null;
             }
         })
-
-        return {token,id,email,nickname,headPic,level,time,setUserInfo,levelInfo,resetUserInfo,updateNicknameAndHeadPic}
+        return {token,id,email,nickname,headPic,level,time,setUserInfo,levelInfo,resetUserInfo,updateNicknameAndHeadPic,resetLevel}
     },{
         persist : {
             storage : localStorage,

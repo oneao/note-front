@@ -108,7 +108,7 @@ const getCodeButtonClick = (e) => {
         if (!errors) {
           const email = registerFormData.value.email;
           UserApi.getCode(email).then(res => {
-            if(res.code === 60001){
+            if(res.data.code === 60001){
               //获取验证码成功
               message.success(res.data.message);
             }else{

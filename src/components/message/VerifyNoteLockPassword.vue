@@ -70,7 +70,7 @@ const cancelMethod = () => {
           </n-gi>
         </n-grid>
         <n-button @click="verifyTheUnlockPasswordMethod2" block type="error" style="width: 100%;margin-top: 10px" ghost>
-          彻底解锁(注:密码将会清空)
+          彻底解锁
         </n-button>
       </template>
     </n-card>

@@ -2,6 +2,7 @@
 import {disabledBtn} from "@/utils/disabledBtn";
 import UserApi from '@/api/user/index'
 import {useMessage} from 'naive-ui'
+import {storeToRefs} from "pinia";
 
 const message = useMessage()
 import {useLoadingBar} from 'naive-ui'
@@ -12,8 +13,8 @@ import {SettingOutlined} from "@vicons/antd";
 import {useUserStore} from "@/stores/userStore";
 
 const userStore = useUserStore();
-const {email} = userStore;
-
+const {email} = storeToRefs(userStore);
+const {levelInfo} = userStore
 //=====================================重置密码BEGIN=========================================
 import md5 from 'js-md5'
 const resetButton = ref(false)
@@ -196,7 +197,7 @@ const toUpdateForgetPassword = () => {
           </n-gi>
         </n-grid>
         <n-space vertical style="margin-top: 20px">
-          <n-text :depth="3">当前用户等级为普通用户</n-text>
+          <n-text :depth="3">当前用户等级为<n-gradient-text>{{ levelInfo.level }}</n-gradient-text></n-text>
         </n-space>
       </template>
     </n-card>

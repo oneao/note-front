@@ -23,7 +23,7 @@ import {useUserStore} from "@/stores/userStore";
 
 const userStore = useUserStore();
 const {id: userId, headPic: userAvatar, nickname, token} = storeToRefs(userStore);
-const {levelInfo, resetUserInfo} = userStore;
+const {levelInfo, resetUserInfo, resetLevel} = userStore;
 //头像下拉菜单信息
 import {NIcon, useDialog} from "naive-ui";
 //读取图标
@@ -88,12 +88,6 @@ const updateMenuStatus = (key, item) => {
 
 //===========================================websocket==============================================
 //评论============================
-const commentObj = {
-  userId: 0,
-  index: 0,
-  time: '',
-  message: ''
-}
 const commentList = ref([])
 //评论============================
 
@@ -120,14 +114,32 @@ on('open', event => {
 
 on('message', data => {
   if (data === 'ping') {
-  } else if (data !== null && data !== '' && isJSONString(data)) {
+
+  }
+  //评论信息
+  else if (data !== null && data !== '' && isJSONString(data)) {
     const jsonData = JSON.parse(data);
-    jsonData.message = '你分享的笔记《' + jsonData.message + '》被评论啦！😝';
-    // 转换时间格式
-    const dateTime = new Date(jsonData.time);
-    jsonData.time = dateTime.toISOString().slice(0, 19).replace('T', ' ');
-    commentList.value.push(jsonData);
-  } else {
+    if (jsonData.mark === '001') {
+      jsonData.message = '你分享的笔记《' + jsonData.message + '》被评论啦！😝';
+      // 转换时间格式
+      const dateTime = new Date(jsonData.time);
+      jsonData.time = dateTime.toISOString().slice(0, 19).replace('T', ' ');
+      commentList.value.push(jsonData);
+    } else if (jsonData.mark === '002') {
+      if (jsonData.level !== null && jsonData.level !== '') {
+        message.info(
+            "恭喜您的等级升级，当前等级为：" + jsonData.level,
+            {
+              closable: true,
+              keepAliveOnHover: true
+            }
+        );
+        resetLevel(jsonData.level)
+      }
+    }
+  }
+  //点赞信息
+  else {
     const uId = data.split('^')[0];
     const uIdNumber = parseInt(uId);
     if (uIdNumber === userId.value) {
@@ -249,7 +261,7 @@ const delOneCommentReply = (item) => {
         return k.index !== item.index
       })
       commentList.value.forEach(k => {
-        if(k.index > item.index){
+        if (k.index > item.index) {
           k.index = k.index - 1;
         }
       })
@@ -269,7 +281,7 @@ const delOneCommentReply = (item) => {
     <n-text style="font-size: 20px">Note</n-text>
     <n-space style="text-align: center">
       <!--头像-->
-      <n-popover :disabled="showPopover" trigger="click" width="260" content-style="padding: 10px">
+      <n-popover v-if="userId !== null && userId !== -1" :disabled="showPopover" trigger="click" width="260" content-style="padding: 10px">
         <!--  -->
         <!--头像菜单触发器-->
         <template #trigger>
@@ -286,8 +298,8 @@ const delOneCommentReply = (item) => {
           <!--描述-->
           <template #description>
             <n-space align="center">
-              <n-tag size="small" :bordered="false" type="success">{{ levelInfo }}</n-tag>
-              <n-text depth="3">2099-01-31 到期</n-text>
+              <n-tag size="small" :bordered="false" type="success">{{ levelInfo.level }}</n-tag>
+              <n-text depth="3">{{ levelInfo.levelInfo }}</n-text>
             </n-space>
           </template>
           <template #default>
@@ -300,7 +312,7 @@ const delOneCommentReply = (item) => {
         </n-thing>
       </n-popover>
       <!--分割线-->
-      <n-divider v-if="userId !== null" vertical style="position: relative;top:5px;"
+      <n-divider v-if="userId !== null && userId !== -1" vertical style="position: relative;top:5px;"
                  :style="theme.theDividingLineColor"/>
       <!--消息提示-->
       <n-badge :value="messageTab.length + commentList.length" processing :offset="[-6,1]">
@@ -356,7 +368,7 @@ const delOneCommentReply = (item) => {
         </template>
       </n-switch>
       <!--登录按钮-->
-      <n-button v-if="userId === null" tertiary type="primary" @click="changeModalStatus(true)">登录</n-button>
+      <n-button v-if="userId === -1 || userId === null" tertiary type="primary" @click="changeModalStatus(true)">登录</n-button>
     </n-space>
   </n-space>
 
