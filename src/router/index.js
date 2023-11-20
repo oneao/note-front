@@ -2,6 +2,10 @@ import {createRouter, createWebHistory} from 'vue-router'
 
 const routes = [
     {
+      path: '/',
+        component:() => import('@/views/home/Home.vue')
+    },
+    {
         path: '/smallNote',//小记
         component: () => import('@/views/small-note/IndexView.vue')
     },
