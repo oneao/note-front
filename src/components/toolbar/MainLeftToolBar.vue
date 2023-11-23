@@ -1,5 +1,5 @@
 <script setup>
-import {h, ref, watch,inject} from 'vue';
+import {h, ref, watch, inject, watchEffect} from 'vue';
 import {NIcon} from "naive-ui";
 import {
   AddBoxRound,
@@ -41,17 +41,18 @@ const addOptions = [
   {
     label: '新增笔记',
     key: 'note',
-    icon: renderIcon(NoteOutlined, 20, '#18a058')
+    icon: renderIcon(NoteOutlined, 20, '#18a058'),
+    props: {
+      onClick: () => {
+        router.push('/note').then(() => {
+          bus.emit('createNewNote')
+        })
+      }
+    }
   }
 ]
 //主菜单
 const mainMenus = [
-  {
-    label: '最近操作',
-    icon: AccessTimeRound,
-    icon_size: 26,
-    to: ''
-  },
   {
     label: '小记',
     icon: StickyNote2Outlined,
@@ -96,6 +97,27 @@ const isHighlightMenu = (toRouterPath) => {
   if (!toRouterPath) return false;
   return routerPath.value.startsWith(toRouterPath)
 }
+
+
+//搜索框
+import SearchModal from '@/components/common/SearchModal.vue'
+import {storeToRefs} from "pinia";
+import {isShowSearchStore} from "@/stores/showSearchStore";
+
+const showSearchStore = isShowSearchStore()
+const {isShow} = storeToRefs(showSearchStore)
+const changeSearchShow = () => {
+  isShow.value = true
+}
+const handleKeydown = (event) => {
+  if (event.key === 'Escape') {
+    isShow.value = false
+  }
+};
+
+watchEffect(() => {
+  document.addEventListener('keydown', handleKeydown);
+});
 </script>
 
 <template>
@@ -108,7 +130,7 @@ const isHighlightMenu = (toRouterPath) => {
     </n-dropdown>
     <!--搜索功能-->
     <n-button text>
-      <n-icon size="26" :component="SearchRound"/>
+      <n-icon size="26" :component="SearchRound" @click="changeSearchShow"/>
     </n-button>
   </n-space>
   <!--分割线-->
@@ -129,4 +151,6 @@ const isHighlightMenu = (toRouterPath) => {
       <span>{{ item.label }}</span>
     </n-popover>
   </n-space>
+  <!--搜索框-->
+  <search-modal></search-modal>
 </template>

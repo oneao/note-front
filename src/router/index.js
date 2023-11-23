@@ -47,7 +47,7 @@ const routes = [
     {
         path: '/collection',
         component:() => import('@/views/note/Collection.vue')
-    }
+    },
 ]
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),

@@ -31,6 +31,7 @@ const UserApi = {
     getCommentReply:() => get(`/user/getCommentReply`),
     //删除一个评论信息
     delOneCommentReply:(index) => del(`/user/delOneCommentReply?index=${index}`),
-
+    //获取最近操作的笔记和小记
+    getRecentOperationNote:() => get(`/user/getRecentOperationNote`)
 }
 export default UserApi;

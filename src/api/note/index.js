@@ -50,6 +50,9 @@ const NoteApi = {
     //取消分享密码
     delShareNoteLock:(obj) => post(`/noteShare/delShareNoteLock`,obj),
     //编辑分享笔记的内容
-    updateShareNoteContent:(obj) => post(`/noteShare/updateShareNoteContent`,obj)
+    updateShareNoteContent:(obj) => post(`/noteShare/updateShareNoteContent`,obj),
+    //获取笔记信息
+    getElasticSearchValue:(value) => get(`/note/getElasticSearchValue?value=${value}`),
+
 }
 export default NoteApi;

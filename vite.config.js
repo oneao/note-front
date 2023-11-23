@@ -2,6 +2,7 @@ import {fileURLToPath, URL} from 'node:url'
 
 import {defineConfig} from 'vite'
 import vue from '@vitejs/plugin-vue'
+
 //自动引入
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
@@ -24,7 +25,8 @@ export default defineConfig({
         }),
         Components({
             resolvers: [NaiveUiResolver()]
-        })
+        }),
+
     ],
     resolve: {
         alias: {

@@ -1,6 +1,6 @@
 <script setup>
 import NoteCard from '@/components/note/NoteCard.vue'
-import {h, ref, onMounted, computed, inject} from 'vue'
+import {h, ref, onMounted, computed, inject, onBeforeUnmount} from 'vue'
 import {
   NoteAddRound,
   SubtitlesOffOutlined,
@@ -149,7 +149,7 @@ const showContextMenu = (e, noteId, isTop, noteTitle, isNewBuild, noteBody, note
     contextMenu.value.noteId = noteId;//笔记id
     contextMenu.value.isTop = isTop;//是否置顶
     contextMenu.value.isNewBuild = isNewBuild;//是否新建
-    contextMenu.value.noteTitle = noteTitle ;//笔记标题
+    contextMenu.value.noteTitle = noteTitle;//笔记标题
     contextMenu.value.noteBackgroundImage = noteBackgroundImage;//背景图片
     contextMenu.value.isLock = isLock
     //为编辑笔记信息表单赋值
@@ -245,6 +245,14 @@ const deleteNoteLogic = (delStatus, isNewBuild) => {
 //=========================================删除笔记END============================================
 
 //=========================================新增笔记BEGIN============================================
+import bus from 'vue3-eventbus'
+
+bus.on('createNewNote', () => {
+  addNote()
+})
+onBeforeUnmount(() => {
+  bus.off('createNewNote')
+})
 let defaultTitle = '暂未设置标题'
 const addNote = () => {
   loadingBar.start()
@@ -553,7 +561,7 @@ const delBackgroundImage = () => {
             <n-icon :component="SubtitlesOffOutlined"/>
           </template>
           <template #extra>
-            <n-button dashed>创建笔记</n-button>
+            <n-button dashed @click="addNote">创建笔记</n-button>
           </template>
         </n-empty>
       </n-scrollbar>

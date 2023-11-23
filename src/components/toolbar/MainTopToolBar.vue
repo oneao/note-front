@@ -163,7 +163,6 @@ on('close', event => {
 });
 const getLikeMessage = () => {
   UserApi.getLikeMessage().then(res => {
-    console.log(res)
     if (res.data.code === 200) {
       if (res.data.data !== null) {
         res.data.data.forEach(item => {
@@ -270,7 +269,9 @@ const delOneCommentReply = (item) => {
 }
 //===========================================删除点赞信息=============================================
 
-
+const toHome = () => {
+  router.push('/')
+}
 </script>
 
 <template>
@@ -278,10 +279,21 @@ const delOneCommentReply = (item) => {
   <!--头部应用栏-->
   <n-space align="center" justify="space-between" style="height: 100%">
 
-    <n-text style="font-size: 20px">Note</n-text>
+    <n-avatar
+        src="../../../public/logo.png"
+        style="width: 100%; cursor: pointer;"
+        @click="toHome"
+    />
+    <div class="scrolling-container">
+      <div class="scrolling-content">
+        🔥欢迎使用这款笔记软件。
+      </div>
+    </div>
+
     <n-space style="text-align: center">
       <!--头像-->
-      <n-popover v-if="userId !== null && userId !== -1" :disabled="showPopover" trigger="click" width="260" content-style="padding: 10px">
+      <n-popover v-if="userId !== null && userId !== -1" :disabled="showPopover" trigger="click" width="260"
+                 content-style="padding: 10px">
         <!--  -->
         <!--头像菜单触发器-->
         <template #trigger>
@@ -368,7 +380,8 @@ const delOneCommentReply = (item) => {
         </template>
       </n-switch>
       <!--登录按钮-->
-      <n-button v-if="userId === -1 || userId === null" tertiary type="primary" @click="changeModalStatus(true)">登录</n-button>
+      <n-button v-if="userId === -1 || userId === null" tertiary type="primary" @click="changeModalStatus(true)">登录
+      </n-button>
     </n-space>
   </n-space>
 
@@ -392,4 +405,34 @@ const delOneCommentReply = (item) => {
   font-size: 16px;
   font-weight: bold;
 }
+
+.scrolling-container {
+  min-width: 400px;
+  overflow: hidden;
+  background-color: #ecf5ff;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.scrolling-content {
+  white-space: nowrap;
+  animation: scroll 8s linear infinite;
+  padding: 10px;
+  color: #333;
+  font-size: 16px;
+  font-weight: bold;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+
 </style>

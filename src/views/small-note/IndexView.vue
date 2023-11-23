@@ -291,6 +291,10 @@ const filterMethod = () => {
   //queryObj.value.searchValue = null;
   getSmallNoteList(true)
 }
+
+const showSmallNote = () => {
+
+}
 </script>
 
 <template>
@@ -365,7 +369,7 @@ const filterMethod = () => {
                     embedded
                     :title="smallNote.smallNoteTitle"
                     :style="thingFinishShadowColor,computedIsPromptCss(smallNote)"
-                    style="min-width:220px;max-width:305px;margin-top: 15px;margin-left: 25px;">
+                    style="min-width:220px;max-width:305px;margin-top: 15px;margin-left: 25px;background-color: lightsalmon">
               <template #header-extra>
                 <!--删除按钮-->
                 <n-popover>

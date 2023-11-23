@@ -12,9 +12,13 @@ import bus from 'vue3-eventbus'
 bus.on('createNewSmallNote',()=>{
   showEditModal(null)
 })
+bus.on('showSmallNote',(payload) => {
+  showEditModal(payload.data)
+})
 //组件卸载之前停止监听
 onBeforeUnmount(() => {
   bus.off('createNewSmallNote')
+  bus.off('showSmallNote')
 })
 //按钮禁用
 import {disabledBtn} from "@/utils/disabledBtn";
